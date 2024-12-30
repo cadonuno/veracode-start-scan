@@ -17,8 +17,7 @@ def main():
     if scan_configuration.pipeline_scan:
         start_pipeline_scan(scan_configuration)
     else:
-        start_platform_scan(scan_configuration)       
-
+        start_platform_scan(scan_configuration)
 
 if __name__ == '__main__':
     main()
