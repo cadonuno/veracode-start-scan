@@ -1,15 +1,17 @@
 from ScanConfiguration import ScanConfiguration
 from PipelineScan import start_pipeline_scan
 from PlatformScan import start_platform_scan
-from VeracodePackager import package_application
+from VeracodeCli import package_application
 from PreScan import pre_scan_actions
+from CliCaller import check_wrapper
 
-def main():
+def main():    
     scan_configuration = ScanConfiguration()
+    check_wrapper(scan_configuration)
 
     scan_configuration = pre_scan_actions(scan_configuration)
 
-    if scan_configuration.type == 'folder':
+    if scan_configuration.scan_type == 'folder':
         scan_configuration.source = package_application(scan_configuration.source, scan_configuration)
 
     if scan_configuration.pipeline_scan:

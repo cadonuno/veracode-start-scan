@@ -1,7 +1,7 @@
 import argparse
 import os
 from Constants import ALLOWED_CRITICALITIES, SCAN_TYPES
-from VeracodeApi import get_application_id, get_collection_id, get_business_unit_id, get_team_id, get_application_policy_name
+from VeracodeApi import get_application_id, get_collection_id, get_business_unit_id, get_team_id
 from ErrorHandler import exit_with_error
 
 class Team:
@@ -43,7 +43,7 @@ class ScanConfiguration:
     business_owner : str
     business_owner_email : str
 
-    type : str
+    scan_type : str
 
     source : str
     pipeline_scan : bool
@@ -52,11 +52,11 @@ class ScanConfiguration:
     vid : str
     vkey : str
     scan_timeout : int
+    veracode_cli_location : str
 
     application_guid : str
     collection_guid : str
-    business_unit_guid : str    
-    policy_name : str
+    business_unit_guid : str
 
     def append_error(self, errors, field_value, field_name, error_message):
         errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
@@ -82,6 +82,7 @@ class ScanConfiguration:
 
         errors = self.validate_field(errors, self.description, "-d/--description", "Description cannot be longer than 4000 characters", lambda description: len(description) > 4000)
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
+        self.business_criticality = self.business_criticality.upper()
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
 
         errors = self.validate_field(errors, self.collection, "-c/--collection", "Collection name cannot be longer than 256 characters", lambda collection: len(collection) > 256)
@@ -96,7 +97,7 @@ class ScanConfiguration:
 
         errors = self.validate_list(errors, self.team_list, "-t/--team", lambda team: len(team.name) > 256, lambda team: team.name, lambda _: "Team name cannot be longer than 256 characters")
         
-        errors = self.validate_field(errors, self.type, "-st/--scan_type", "Type must be one of these values: folder, artifact", lambda type: not type.replace(" ", "").lower() in SCAN_TYPES)
+        errors = self.validate_field(errors, self.scan_type, "-st/--scan_type", "Type must be one of these values: folder, artifact", lambda scan_type: not scan_type.replace(" ", "").lower() in SCAN_TYPES)
 
         errors = self.validate_field(errors, self.source, "-s/--source", f"File not found {self.source}", lambda source: not os.path.exists(source))
         if self.pipeline_scan and self.sandbox_name:
@@ -108,18 +109,16 @@ class ScanConfiguration:
             errors = self.append_error(errors, self.version, "-v/--version", "Pipeline scan does not support a scan name")
         errors = self.validate_field(errors, self.version, "-v/--version", "Scan name cannot be longer than 256 characters", lambda version: len(version) > 256)
 
+        errors = self.validate_field(errors, self.veracode_cli_location, "-cli/--veracode_cli_location", "Invalid or not found Veracode CLI Location", lambda veracode_cli: not os.path.isfile(veracode_cli))
+
         if errors:
             exit_with_error(errors, len(errors)*-1, self)
 
-        if self.pipeline_scan:
-            self.policy_name = get_application_policy_name(self.application_guid, self)
-
-
     def parse_custom_field_list(self, custom_field_list):
-        return map(custom_field_list, lambda custom_field: CustomField(custom_field))
+        return list(map(lambda custom_field: CustomField(custom_field), custom_field_list)) if custom_field_list else None
 
     def parse_team_list(self, team_list):
-        return map(team_list, lambda team_name: Team(team_name, self))
+        return list(map(lambda team_name: Team(team_name, self), team_list)) if team_list else None
 
     def __init__(self):
         parser = argparse.ArgumentParser(
@@ -132,12 +131,6 @@ class ScanConfiguration:
             "--application",
             help="Applications to scan - if it does not exist, it will be created.",
             required=True
-        )
-        parser.add_argument(
-            "-d",
-            "--description",
-            help="Description of the application - if the application already exists, it WILL be updated.",
-            required=False
         )
         parser.add_argument(
             "-d",
@@ -271,6 +264,12 @@ class ScanConfiguration:
             required=False,
             action=argparse.BooleanOptionalAction
         )
+        parser.add_argument(
+            "-cli",
+            "--veracode_cli_location",
+            help="Location of the Veracode CLI installation.",
+            required=True
+        )
 
         args = parser.parse_args()
         self.application = args.application
@@ -284,7 +283,7 @@ class ScanConfiguration:
         self.business_unit = args.business_unit
         self.business_owner = args.business_owner
         self.business_owner_email = args.business_owner_email
-        self.type = args.type
+        self.scan_type = args.scan_type
         self.source = args.source
         self.pipeline_scan = args.pipeline_scan
         self.sandbox_name = args.sandbox_name
@@ -294,5 +293,6 @@ class ScanConfiguration:
         self.vid = args.veracode_api_key_id
         self.vkey = args.veracode_api_key_secret        
         self.scan_timeout = args.scan_timeout
+        self.veracode_cli_location = args.veracode_cli_location
 
         self.validate_input()

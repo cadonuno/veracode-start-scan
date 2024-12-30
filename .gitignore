@@ -169,3 +169,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+veracode.exe
+veracode
+VeracodeJavaAPI.jar
+.vscode
+
+.verascan
+Medium%2B not allowed with SCA
+results.json

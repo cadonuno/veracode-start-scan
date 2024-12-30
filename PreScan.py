@@ -23,8 +23,4 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
     else:
         update_collection(scan_configuration)
 
-    if scan_configuration.pipeline_scan:
-        call_subprocess(scan_configuration, "veracode", "policy", "get", scan_configuration.policy_name)
-        scan_configuration.policy_name = scan_configuration.policy_name.replace(" ", "_")
-    
     return scan_configuration
