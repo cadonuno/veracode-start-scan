@@ -34,6 +34,7 @@ class ScanConfiguration:
     business_criticality : str
     team_list : list[Team]
     application_custom_fields : list[CustomField]
+    git_repo_url : str
 
     collection : str
     collection_description : str
@@ -74,26 +75,30 @@ class ScanConfiguration:
                 errors = self.append_error(errors, field_value_function(custom_field), parameter_name, error_function(custom_field))
 
         return errors
+    
+    def validate_field_size(self,errors, field_value, field_name, message_field_name, field_max_size):
+        return self.validate_field(errors, field_value, field_name, f"{message_field_name} cannot be longer than {field_max_size} characters", lambda value: len(value) > field_max_size)
 
     def validate_input(self):
         errors = []
-        errors = self.validate_field(errors, self.application, "-a/--application", "Application name cannot be longer than 256 characters", lambda application: len(application) > 256)
+        errors = self.validate_field_size(errors, self.application, "-a/--application", "Application name", 256)
         self.application_guid = get_application_id(self.application, self)
 
-        errors = self.validate_field(errors, self.description, "-d/--description", "Description cannot be longer than 4000 characters", lambda description: len(description) > 4000)
+        errors = self.validate_field_size(errors, self.description, "-d/--description", "Description", 4000)
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
         self.business_criticality = self.business_criticality.upper()
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
+        errors = self.validate_field_size(errors, self.git_repo_url, "-url/--git_repo_url", "Git Repo URL", 512)
 
-        errors = self.validate_field(errors, self.collection, "-c/--collection", "Collection name cannot be longer than 256 characters", lambda collection: len(collection) > 256)
+        errors = self.validate_field_size(errors, self.collection, "-c/--collection", "Collection name", 256)
         self.collection_guid = get_collection_id(self.collection, self)
-        errors = self.validate_field(errors, self.collection_description, "-cd/--collection_description", "Collection Description cannot be longer than 4000 characters", lambda description: len(description) > 4000)
+        errors = self.validate_field_size(errors, self.collection_description, "-cd/--collection_description", "Collection Description", 4000)
         errors = self.validate_list(errors, self.collection_custom_fields, "-cc/--collection_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
 
         if self.business_unit:
             self.business_unit_guid = get_business_unit_id(self.business_unit, self)
-        errors = self.validate_field(errors, self.business_owner, "-bo/--business_owner", "Business Owner name cannot be longer than 128 characters", lambda business_owner: len(business_owner) > 128)
-        errors = self.validate_field(errors, self.business_owner_email, "-boe/--business_owner_email", "Business Owner e-mail cannot be longer than 256 characters", lambda business_owner_email: len(business_owner_email) > 256)
+        errors = self.validate_field_size(errors, self.business_owner, "-bo/--business_owner", "Business Owner name", 128)
+        errors = self.validate_field_size(errors, self.business_owner_email, "-boe/--business_owner_email", "Business Owner E-mail", 256)
 
         errors = self.validate_list(errors, self.team_list, "-t/--team", lambda team: len(team.name) > 256, lambda team: team.name, lambda _: "Team name cannot be longer than 256 characters")
         
@@ -103,11 +108,11 @@ class ScanConfiguration:
         if self.pipeline_scan and self.sandbox_name:
             errors = self.append_error(errors, self.sandbox_name, "-sn/--sandbox_name", "Pipeline scan does not support a sandbox name")
         
-        errors = self.validate_field(errors, self.sandbox_name, "-sn/--sandbox_name", "Sandbox name cannot be longer than 256 characters", lambda sandbox_name: len(sandbox_name) > 256)
+        errors = self.validate_field_size(errors, self.sandbox_name, "-sn/--sandbox_name", "Sandbox name", 256)
 
         if self.pipeline_scan and self.version:
             errors = self.append_error(errors, self.version, "-v/--version", "Pipeline scan does not support a scan name")
-        errors = self.validate_field(errors, self.version, "-v/--version", "Scan name cannot be longer than 256 characters", lambda version: len(version) > 256)
+        errors = self.validate_field_size(errors, self.version, "-v/--version", "Scan name", 256)
 
         errors = self.validate_field(errors, self.veracode_cli_location, "-cli/--veracode_cli_location", "Invalid or not found Veracode CLI Location", lambda veracode_cli: not os.path.isfile(veracode_cli))
 
@@ -156,6 +161,12 @@ class ScanConfiguration:
             "--application_custom_field",
             help="(optional) Colon(:)-separated key-value pairs for the custom fields to set for the APPLICATION PROFILE, takes 0 or more. I.e.: A Field:Some Value.",
             action="append",
+            required=False
+        )
+        parser.add_argument(
+            "-url",
+            "--git_repo_url",
+            help="URL of the git repository scanned.",
             required=False
         )
         
@@ -294,5 +305,6 @@ class ScanConfiguration:
         self.vkey = args.veracode_api_key_secret        
         self.scan_timeout = args.scan_timeout
         self.veracode_cli_location = args.veracode_cli_location
+        self.git_repo_url = args.git_repo_url
 
         self.validate_input()

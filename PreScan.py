@@ -1,5 +1,5 @@
 from ScanConfiguration import ScanConfiguration
-from VeracodeApi import create_business_unit, create_team, create_application, create_collection, update_collection
+from VeracodeApi import create_business_unit, create_team, create_application, create_collection, update_collection, update_application
 from CliCaller import call_subprocess
 
 def pre_scan_actions(scan_configuration: ScanConfiguration):
@@ -17,6 +17,9 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
 
     if not scan_configuration.application_guid:
         scan_configuration.application_guid = create_application(scan_configuration)
+    else:
+        update_application(scan_configuration)
+
 
     if not scan_configuration.collection_guid:
         scan_configuration.collection_guid = create_collection(scan_configuration)

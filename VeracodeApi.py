@@ -4,6 +4,12 @@ from veracode_api_py.applications import Applications
 from veracode_api_py.policy import Policies
 from ErrorHandler import exit_with_error
 
+def parse_custom_field(custom_field):
+    return {
+        "name": custom_field.name,
+        "value": custom_field.value
+    }
+
 def try_to_run_and_return(input_parameter: str, function_to_run, scan_configuration):
     try:
         return function_to_run(input_parameter)
@@ -89,17 +95,23 @@ def inner_create_business_unit(scan_configuration):
 def create_application(scan_configuration):
     return try_to_run_and_return(scan_configuration, inner_create_application, scan_configuration)
 
-def parse_custom_field(custom_field):
-    return {
-        "name": custom_field.name,
-        "value": custom_field.value
-    }
-
 def inner_create_application(scan_configuration):
-    application = Applications().create(app_name=scan_configuration.application, business_criticality=scan_configuration.business_criticality,
-                        business_unit=scan_configuration.business_unit_guid, teams=list(map(lambda team: team.guid, scan_configuration.team_list)),
-                        custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.application_custom_fields)), 
-                        bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email)
+    application = Applications().create(app_name=scan_configuration.application, business_criticality=scan_configuration.business_criticality, 
+                                        description=scan_configuration.description, git_repo_url=scan_configuration.git_repo_url,
+                                        business_unit=scan_configuration.business_unit_guid, teams=list(map(lambda team: team.guid, scan_configuration.team_list)),
+                                        custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.application_custom_fields)), 
+                                        bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email)
+    return application["guid"]
+
+def update_application(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_update_application, scan_configuration)
+
+def inner_update_application(scan_configuration):
+    application = Applications().update(guid=scan_configuration.application_guid, app_name=scan_configuration.application,business_criticality=scan_configuration.business_criticality, 
+                                        description=scan_configuration.description, git_repo_url=scan_configuration.git_repo_url,
+                                        business_unit=scan_configuration.business_unit_guid, teams=list(map(lambda team: team.guid, scan_configuration.team_list)),
+                                        custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.application_custom_fields)), 
+                                        bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email)
     return application["guid"]
 
 def create_collection(scan_configuration):
