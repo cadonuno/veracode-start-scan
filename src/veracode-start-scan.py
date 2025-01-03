@@ -3,11 +3,9 @@ from PipelineScan import start_pipeline_scan
 from PlatformScan import start_platform_scan
 from VeracodeCli import package_application
 from PreScan import pre_scan_actions
-from CliCaller import check_wrapper
 
-def main():    
+def main():
     scan_configuration = ScanConfiguration()
-    check_wrapper(scan_configuration)
 
     scan_configuration = pre_scan_actions(scan_configuration)
 

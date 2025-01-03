@@ -1,16 +1,22 @@
 import argparse
 import os
-from Constants import ALLOWED_CRITICALITIES, SCAN_TYPES
-from VeracodeApi import get_application_id, get_collection_id, get_business_unit_id, get_team_id
+from pathlib import Path
+from datetime import datetime
+from Constants import ALLOWED_CRITICALITIES, SCAN_TYPES, SCA_URL_MAP
+from VeracodeApi import get_application_id, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
+from veracode_api_py.apihelper import get_region_for_api_credential
 from ErrorHandler import exit_with_error
+
+
 
 class Team:
     name: str
     guid: str
+    legacy_id : str
 
     def __init__(self, name, scan_configuration):
         self.name = name
-        self.guid = get_team_id(name, scan_configuration)
+        self.guid, self.legacy_id = get_team_ids(name, scan_configuration)
 
 class CustomField:
     name : str
@@ -48,16 +54,26 @@ class ScanConfiguration:
 
     source : str
     pipeline_scan : bool
+    workspace_name : str
     sandbox_name : str
     fail_build : bool
     vid : str
     vkey : str
     scan_timeout : int
     veracode_cli_location : str
+    veracode_wrapper_location : str
 
     application_guid : str
     collection_guid : str
     business_unit_guid : str
+    workspace_guid : str
+    srcclr_token : str
+    sca_agent_name : str
+    policy_name : str
+    srcclr_api_url : str
+    agent_id : str
+    srcclr_to_scan : str
+    base_cli_directory : str
 
     def append_error(self, errors, field_value, field_name, error_message):
         errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
@@ -78,6 +94,15 @@ class ScanConfiguration:
     
     def validate_field_size(self,errors, field_value, field_name, message_field_name, field_max_size):
         return self.validate_field(errors, field_value, field_name, f"{message_field_name} cannot be longer than {field_max_size} characters", lambda value: len(value) > field_max_size)
+
+    def has_git_folder(self, directory):
+        return os.path.isdir(os.path.join(directory, ".git"))
+
+    def get_git_root(self, scan_source):
+        current_directory = scan_source
+        while current_directory and not self.has_git_folder(current_directory):
+            current_directory = Path(current_directory).parent.absolute()
+        return current_directory if current_directory else scan_source
 
     def validate_input(self):
         errors = []
@@ -112,9 +137,27 @@ class ScanConfiguration:
 
         if self.pipeline_scan and self.version:
             errors = self.append_error(errors, self.version, "-v/--version", "Pipeline scan does not support a scan name")
+        if not self.pipeline_scan and self.workspace_name:
+            errors = self.append_error(errors, self.workspace_name, "-wn/--workspace_name", "Agent-based SCA is only supported when running pipeline scans. *Requires the SCA Agent to be installed")
+
+        errors = self.validate_field_size(errors, self.workspace_name, "-wn/--workspace_name", "Workspace Name", 512)
+        if self.workspace_name:
+            self.workspace_guid = get_workspace_id(self.workspace_name, self)
+            now = datetime.now()
+            self.sca_agent_name = f"{now.year}{now.month}{now.day}{now.hour}{now.minute}{now.second}{now.microsecond}"
+            self.srcclr_api_url = SCA_URL_MAP[get_region_for_api_credential(self.vid)]
+
         errors = self.validate_field_size(errors, self.version, "-v/--version", "Scan name", 256)
 
         errors = self.validate_field(errors, self.veracode_cli_location, "-cli/--veracode_cli_location", "Invalid or not found Veracode CLI Location", lambda veracode_cli: not os.path.isfile(veracode_cli))
+        errors = self.validate_field(errors, self.veracode_wrapper_location, "-wra/--veracode_wrapper_location", "Invalid or not found Veracode Java API Wrapper", lambda wrapper: not os.path.isfile(wrapper))
+
+        if self.workspace_name:
+            self.srcclr_to_scan = self.get_git_root(self.source)
+
+        self.base_cli_directory = os.path.join(os.path.realpath(__file__), self.source)
+        if not os.path.isdir(self.base_cli_directory):
+            self.base_cli_directory = os.path.dirname(self.base_cli_directory)
 
         if errors:
             exit_with_error(errors, len(errors)*-1, self)
@@ -232,6 +275,12 @@ class ScanConfiguration:
             action=argparse.BooleanOptionalAction
         )
         parser.add_argument(
+            "-wn",
+            "--workspace_name",
+            help="Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run with the Pipeline Scan.",
+            required=False
+        )
+        parser.add_argument(
             "-sn",
             "--sandbox_name",
             help="Name of the sandbox to use for the scan, leave empty to run a Policy Scan.",
@@ -256,7 +305,7 @@ class ScanConfiguration:
             required=True
         )
         parser.add_argument(
-            "-sc",
+            "-sct",
             "--scan_timeout",
             help="Scan timeout (in minutes). If empty or 0, will not wait for Sandbox/Policy scans to complete",
             required=False
@@ -281,6 +330,12 @@ class ScanConfiguration:
             help="Location of the Veracode CLI installation.",
             required=True
         )
+        parser.add_argument(
+            "-wra",
+            "--veracode_wrapper_location",
+            help="Location of the Veracode API Wrapper jar.",
+            required=True
+        )
 
         args = parser.parse_args()
         self.application = args.application
@@ -297,6 +352,7 @@ class ScanConfiguration:
         self.scan_type = args.scan_type
         self.source = args.source
         self.pipeline_scan = args.pipeline_scan
+        self.workspace_name = args.workspace_name
         self.sandbox_name = args.sandbox_name
         self.version = args.version
         self.fail_build = args.fail_build        
@@ -305,6 +361,7 @@ class ScanConfiguration:
         self.vkey = args.veracode_api_key_secret        
         self.scan_timeout = args.scan_timeout
         self.veracode_cli_location = args.veracode_cli_location
+        self.veracode_wrapper_location = args.veracode_wrapper_location
         self.git_repo_url = args.git_repo_url
 
         self.validate_input()

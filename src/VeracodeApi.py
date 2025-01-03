@@ -2,6 +2,8 @@ from veracode_api_py.identity import BusinessUnits, Teams
 from veracode_api_py.collections import Collections
 from veracode_api_py.applications import Applications
 from veracode_api_py.policy import Policies
+from veracode_api_py.sca import Workspaces, SCAApplications
+from veracode_api_py.policy import Policies
 from ErrorHandler import exit_with_error
 
 def parse_custom_field(custom_field):
@@ -66,16 +68,16 @@ def inner_get_collection_id(collection_name: str):
             return match["guid"]
     return None
 
-def get_team_id(team_name: str, scan_configuration):
-    return try_to_run_and_return(team_name, inner_get_team_id, scan_configuration)
+def get_team_ids(team_name: str, scan_configuration):
+    return try_to_run_and_return(team_name, inner_get_team_ids, scan_configuration)
 
-def inner_get_team_id(team_name):
+def inner_get_team_ids(team_name):
     matches = Teams().get_all()
     if not matches or len(matches) == 0:
         return None
     for match in matches:
         if match["team_name"] == team_name.strip():
-            return match["team_id"]
+            return match["team_id"], match["team_legacy_id"]
     return None
 
 def create_team(team_name: str, scan_configuration):
@@ -91,6 +93,18 @@ def create_business_unit(scan_configuration):
 def inner_create_business_unit(scan_configuration):
     business_unit = BusinessUnits().create(scan_configuration.business_unit, list(map(lambda team: team.guid, scan_configuration.team_list)))
     return business_unit["bu_id"]
+
+def get_workspace_id(workspace_name: str, scan_configuration):
+    return try_to_run_and_return(workspace_name, inner_get_workspace_id, scan_configuration)
+
+def inner_get_workspace_id(workspace_name: str):
+    matches = Workspaces().get_by_name(workspace_name)
+    if not matches or len(matches) == 0:
+        return None
+    for match in matches:
+        if match["name"] == workspace_name.strip():
+            return match["id"]
+    return None
 
 def create_application(scan_configuration):
     return try_to_run_and_return(scan_configuration, inner_create_application, scan_configuration)
@@ -133,3 +147,32 @@ def inner_update_collection(scan_configuration):
                                     custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.collection_custom_fields)),
                                     assets=[scan_configuration.application_guid])
     return collection["guid"]
+
+def create_workspace(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_create_workspace, scan_configuration)
+
+def inner_create_workspace(scan_configuration):
+    workspace = Workspaces().create(name=scan_configuration.workspace_name)
+    return workspace
+
+def create_sca_token(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_create_sca_token, scan_configuration)
+
+def inner_create_sca_token(scan_configuration):
+    agent = Workspaces().create_agent(scan_configuration.workspace_guid, scan_configuration.sca_agent_name)
+    return agent["token"]["access_token"], agent["id"]
+
+def add_teams_to_workspace(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_add_teams_to_workspace, scan_configuration)
+
+def inner_add_teams_to_workspace(scan_configuration):
+    for team in scan_configuration.team_list:
+        Workspaces().add_team(scan_configuration.workspace_guid, team.legacy_id)
+    return True
+
+def expire_srcclr_token(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_expire_srcclr_token, scan_configuration)
+
+def inner_expire_srcclr_token(scan_configuration):
+    Workspaces().delete_agent(scan_configuration.workspace_guid, scan_configuration.agent_id)
+    return True
