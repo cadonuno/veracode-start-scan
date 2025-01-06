@@ -36,7 +36,7 @@ def call_subprocess(process_id, scan_configuration: ScanConfiguration, fail_on_e
 def handle_output(process_id, process, output_file):
     last_line = ""
     for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-        last_line = line if not line.strip(line) else last_line
+        last_line = line.strip() if line.strip() else last_line
         print(f"{PROCESS_ID_COLOUR}{process_id}:{Style.reset} {line}", end='')
         if output_file:
             print(line, file=output_file, end='')

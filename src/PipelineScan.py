@@ -29,14 +29,8 @@ def run_agent_sca_inner(results_file, scan_configuration):
                             results_file=results_file,
                             shell=True)
 
-def run_agent_sca(returned_values, results_file, scan_configuration):
-    returned_values["SCA Scan"] = run_agent_sca_inner(results_file, scan_configuration)       
 
-def start_pipeline_scan(scan_configuration: ScanConfiguration):
-    policy_file_name = get_policy_file_name(scan_configuration)
-    returned_values = {}
-    threads = []
-    base_results_location = get_absolute_file_path(scan_configuration.base_cli_directory, "scan_results")
+def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_values, threads, base_results_location):
     Path(base_results_location).mkdir(parents=True, exist_ok=True)
     for scan_target in os.listdir(get_absolute_file_path(scan_configuration.base_cli_directory, scan_configuration.source)):
         folder_to_save = os.path.join(base_results_location, scan_target.replace(".", ""))
@@ -46,6 +40,16 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
                                                                          os.path.join(folder_to_save, "results.txt"),))
         thread.start()
         threads.append(thread)
+
+def run_agent_sca(returned_values, results_file, scan_configuration):
+    returned_values["SCA Scan"] = run_agent_sca_inner(results_file, scan_configuration)       
+
+def start_pipeline_scan(scan_configuration: ScanConfiguration):
+    policy_file_name = get_policy_file_name(scan_configuration)
+    returned_values = {}
+    threads = []
+    base_results_location = get_absolute_file_path(scan_configuration.base_cli_directory, "scan_results")
+    start_all_pipeline_scans(scan_configuration, policy_file_name, returned_values, threads, base_results_location)
     
     try:
         if scan_configuration.srcclr_token:

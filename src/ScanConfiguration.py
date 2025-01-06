@@ -105,12 +105,17 @@ class ScanConfiguration:
         return current_directory if current_directory else scan_source
 
     def validate_input(self):
+        os.environ['veracode_api_key_id'] = self.vid
+        os.environ['veracode_api_key_secret'] = self.vkey
         errors = []
         errors = self.validate_field_size(errors, self.application, "-a/--application", "Application name", 256)
         self.application_guid = get_application_id(self.application, self)
 
         errors = self.validate_field_size(errors, self.description, "-d/--description", "Description", 4000)
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
+        if not self.application_guid and not self.business_criticality:
+            self.append_error(errors, "", "-bc/--business_criticality", "For scanning a new application, Business Criticality is mandatory")
+
         self.business_criticality = self.business_criticality.upper()
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         errors = self.validate_field_size(errors, self.git_repo_url, "-url/--git_repo_url", "Git Repo URL", 512)
@@ -119,6 +124,10 @@ class ScanConfiguration:
         self.collection_guid = get_collection_id(self.collection, self)
         errors = self.validate_field_size(errors, self.collection_description, "-cd/--collection_description", "Collection Description", 4000)
         errors = self.validate_list(errors, self.collection_custom_fields, "-cc/--collection_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
+        if not self.collection:
+            errors = self.validate_field(errors, self.collection_description, "-cd/--collection_description", "Collection Description requires a collection", lambda collection_description: bool(collection_description))
+            errors = self.validate_field(errors, self.collection_custom_fields, "-cc/--collection_custom_field", "Collection Custom Field requires a collection", lambda collection_custom_fields: bool(collection_custom_fields))
+
 
         if self.business_unit:
             self.business_unit_guid = get_business_unit_id(self.business_unit, self)
@@ -183,7 +192,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-d",
             "--description",
-            help="Description of the application - if the application already exists, it WILL be updated.",
+            help="(optional) Description of the application - if the application already exists, it WILL be updated.",
             required=False
         )
         parser.add_argument(
@@ -191,13 +200,6 @@ class ScanConfiguration:
             "--business_criticality",
             help="(optional) Business criticality of the application - if the application already exists, it WILL be updated.",
             required=True
-        )
-        parser.add_argument(
-            "-t",
-            "--team",
-            help="(optional) Teams to assign to the application, takes 0 or more - non-existing teams will be created.",
-            action="append",
-            required=False
         )
         parser.add_argument(
             "-ac",
@@ -209,7 +211,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-url",
             "--git_repo_url",
-            help="URL of the git repository scanned.",
+            help="(optional) URL of the git repository scanned.",
             required=False
         )
         
@@ -223,7 +225,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-cd",
             "--collection_description",
-            help="Description of the collection - if the collection already exists, it WILL be updated.",
+            help="(optional) Description of the collection - if the collection already exists, it WILL be updated.",
             required=False
         )
         parser.add_argument(
@@ -236,21 +238,28 @@ class ScanConfiguration:
 
         #Both:
         parser.add_argument(
+            "-t",
+            "--team",
+            help="(optional) Teams to assign to the application, takes 0 or more - if a team does not exist, it will be created and if the application/collection exists, it WILL be updated.",
+            action="append",
+            required=False
+        )
+        parser.add_argument(
             "-b",
             "--business_unit",
-            help="Name of the Business unit to assign to the application AND collection - if the BU does not exist, it will be created and if the application/collection exists, it WILL be updated.",
+            help="(optional) Name of the Business unit to assign to the application AND collection - if the BU does not exist, it will be created and if the application/collection exists, it WILL be updated.",
             required=False
         )
         parser.add_argument(
             "-bo",
             "--business_owner",
-            help="Name of the business owner - if the application/collection exists, it WILL be updated.",
+            help="(optional) Name of the business owner - if the application/collection exists, it WILL be updated.",
             required=False
         )
         parser.add_argument(
             "-boe",
             "--business_owner_email",
-            help="E-mail of the business owner - if the application/collection exists, it WILL be updated.",
+            help="(optional) E-mail of the business owner - if the application/collection exists, it WILL be updated.",
             required=False
         )
 
@@ -264,7 +273,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-s",
             "--source",
-            help="Source for the scan. For 'folder', will call the Veracode packager on it, otherwise, will send it directly to the scanner",
+            help="Source for the scan. For 'folder', will call the Veracode packager on it, otherwise, will send it directly to the scanner.",
             required=True
         )
         parser.add_argument(
@@ -277,50 +286,50 @@ class ScanConfiguration:
         parser.add_argument(
             "-wn",
             "--workspace_name",
-            help="Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run with the Pipeline Scan.",
+            help="(optional) Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run alongside the Pipeline Scan.",
             required=False
         )
         parser.add_argument(
             "-sn",
             "--sandbox_name",
-            help="Name of the sandbox to use for the scan, leave empty to run a Policy Scan.",
+            help="(optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.",
             required=False
         )
         parser.add_argument(
             "-v",
             "--version",
-            help="Name of the scan/version - has to be unique and does NOT support pipeline scans.",
+            help="Name of the scan/version - has to be unique for each application/sandbox combo and does NOT support pipeline scans - mandatory if not using -ps/--pipeline_scan.",
             required=False
         )
         parser.add_argument(
             "-vid",
             "--veracode_api_key_id",
-            help="Your Veracode API key ID.",
+            help="Veracode API key ID to use - a non-human/API account is recommended.",
             required=True
         )
         parser.add_argument(
             "-vkey",
             "--veracode_api_key_secret",
-            help="Your Veracode API key secret.",
+            help="Veracode API key secret to use - a non-human/API account is recommended.",
             required=True
         )
         parser.add_argument(
             "-sct",
             "--scan_timeout",
-            help="Scan timeout (in minutes). If empty or 0, will not wait for Sandbox/Policy scans to complete",
+            help="(optional) Scan timeout (in minutes). If empty or 0, will not wait for Sandbox/Policy scans to complete.",
             required=False
         )
         parser.add_argument(
             "-f",
             "--fail_build",
-            help="Set to run a fail the build if application fails policy evaluation.",
+            help="(optional) Set to fail the build if application fails policy evaluation.",
             required=False,
             action=argparse.BooleanOptionalAction
         )
         parser.add_argument(
             "-o",
             "--override_failure",
-            help="Set to return a 0 on error. This can be used to avoid breaking a pipeline.",
+            help="(optional) Set to return a 0 on error. This can be used to avoid breaking a pipeline.",
             required=False,
             action=argparse.BooleanOptionalAction
         )

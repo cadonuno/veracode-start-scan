@@ -1,10 +1,54 @@
 # Veracode scan workflow plugin
-Allows for simple implementation of a Veracode workflow.
+Allows for simple implementation of a Veracode scanning workflow.
 
-TODO: document all parameters
-
-# Assumptions:
-This script assumes that:
+## Requirements:
 - The Veracode CLI is installed
 - Java is installed (and added to the system path)
-- The Veracode API wrapper is available in the local directory
+- The Veracode API wrapper is available in the local system
+
+## Installation
+Clone this repository:
+    git clone https://github.com/cadonuno/veracode-start-scan.git
+
+Install dependencies:
+
+    cd /veracode-start-scan
+    pip install -r requirements.txt
+
+## Run
+    python ./src/veracode-start-scan.py (arguments)
+
+Arguments supported include:
+
+Application Parameters:
+- `-a`, `--application` - Applications to scan - if it does not exist, it will be created.
+- `-d`, `--description` - (optional) Description of the application - if the application already exists, it WILL be updated.
+- `-bc`, `--business_criticality` - (optional)  Business criticality of the application - if the application already exists, it WILL be updated.
+- `-ac`, `--application_custom_field` - (optional) Colon(:)-separated key-value pairs for the custom fields to set for the APPLICATION PROFILE, takes 0 or more. I.e.: A Field:Some Value.
+- `-url`, `--git_repo_url` - (optional) URL of the git repository scanned.
+
+Collection Parameters:
+- `-c`, `--collection` - (optional) Name of the collection to assign to the application - will be created if none are found.
+- `-cd`, `--collection_description` -(optional) Description of the collection - if the collection already exists, it WILL be updated.
+- `-cc`, `--collection_custom_field` - (optional) Colon(:)-separated key-value pairs for the custom fields to set for the COLLECTION, takes 0 or more. I.e.: A Field:Some Value.
+
+Both Application and Collection:
+- `-t`, `--team` - (optional) Teams to assign to the application, takes 0 or more - if a team does not exist, it will be created and if the application/collection exists, it WILL be updated.
+- `-b`, `--business_unit` - (optional) Name of the Business unit to assign to the application AND collection - if the BU does not exist, it will be created and if the application/collection exists, it WILL be updated.
+- `-bo`, `--business_owner` - (optional) Name of the business owner - if the application/collection exists, it WILL be updated.
+- `-boe`, `--business_owner_email` - (optional) E-mail of the business owner - if the application/collection exists, it WILL be updated.
+
+Scan Parameters:
+- `-st`, `--scan_type` - Type of scan, either 'folder' or 'artifact'.
+- `-s`, `--source` - Source for the scan. For 'folder', will call the Veracode packager on it, otherwise, will send it directly to the scanner.
+- `-ps`, `--pipeline_scan` - Set to run a pipeline scan. If set, will fetch the policy assigned to the application profile (if one exists) before proceeding - does NOT support a Sandbox name.
+- `-wn`, `--workspace_name` - (optional) Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run alongside the Pipeline Scan.
+- `-sn`, `--sandbox_name` - (optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.
+- `-v`, `--version` - Name of the scan/version - has to be unique for each application/sandbox combo and does NOT support pipeline scans - mandatory if not using -ps/--pipeline_scan.
+- `-vid`, `--veracode_api_key_id` - Veracode API key ID to use - a non-human/API account is recommended.
+- `-vkey`, `--veracode_api_key_secret` - Veracode API key secret to use - a non-human/API account is recommended.
+- `-sct`, `--scan_timeout` - (optional) Scan timeout (in minutes). If empty or 0, will not wait for Sandbox/Policy scans to complete.
+- `-f`, `--fail_build` - (optional) Set to fail the build if application fails policy evaluation.
+- `-o`, `--override_failure` - (optional) Set to return a 0 on error. This can be used to avoid breaking a pipeline.
+- `-cli`, `--veracode_cli_location` - Location of the Veracode CLI installation.
+- `-wra`, `--veracode_wrapper_location` - Location of the Veracode API Wrapper jar.
