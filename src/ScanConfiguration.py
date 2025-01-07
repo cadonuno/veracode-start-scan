@@ -5,9 +5,7 @@ from datetime import datetime
 from Constants import ALLOWED_CRITICALITIES, SCAN_TYPES, SCA_URL_MAP
 from VeracodeApi import get_application_id, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
 from veracode_api_py.apihelper import get_region_for_api_credential
-from ErrorHandler import exit_with_error
-
-
+from ErrorHandler import exit_with_error, show_warning
 
 class Team:
     name: str
@@ -110,6 +108,8 @@ class ScanConfiguration:
         errors = []
         errors = self.validate_field_size(errors, self.application, "-a/--application", "Application name", 256)
         self.application_guid = get_application_id(self.application, self)
+        if self.application_guid and self.key_alias:
+            show_warning("Application already exists, key alias will be IGNORED")
 
         errors = self.validate_field_size(errors, self.description, "-d/--description", "Description", 4000)
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
@@ -218,6 +218,12 @@ class ScanConfiguration:
             "-url",
             "--git_repo_url",
             help="(optional) URL of the git repository scanned.",
+            required=False
+        )
+        parser.add_argument(
+            "-ka",
+            "--key_alias",
+            help="(optional) If using CMKs, sets the key alias to use for this application - if the application already exists, will NOT be updated.",
             required=False
         )
         
@@ -387,5 +393,6 @@ class ScanConfiguration:
         self.veracode_wrapper_location = args.veracode_wrapper_location
         self.git_repo_url = args.git_repo_url
         self.ignore_artifacts = args.ignore_artifact
+        self.key_alias = args.key_alias
 
         self.validate_input()

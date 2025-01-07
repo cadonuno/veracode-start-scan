@@ -31,6 +31,7 @@ Application Parameters:
 - `-bc`, `--business_criticality` - (optional)  Business criticality of the application - if the application already exists, it WILL be updated.
 - `-ac`, `--application_custom_field` - (optional) Colon(:)-separated key-value pairs for the custom fields to set for the APPLICATION PROFILE, takes 0 or more. I.e.: A Field:Some Value.
 - `-url`, `--git_repo_url` - (optional) URL of the git repository scanned.
+- `-ka`, `--key_alias` - (optional) If using CMKs, sets the key alias to use for this application - if the application already exists, will NOT be updated
 
 Collection Parameters:
 - `-c`, `--collection` - (optional) Name of the collection to assign to the application - will be created if none are found.
