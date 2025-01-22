@@ -8,7 +8,7 @@ from ScanConfiguration import ScanConfiguration
 from VeracodeCli import get_policy_file_name
 from ErrorHandler import exit_with_error
 from colored import Fore, Style
-from VeracodeApi import expire_srcclr_token
+from VeracodeApi import expire_srcclr_token, link_sca_project
 
 ERROR_PREFIX_COLOUR = Fore.rgb('136', '0', '21')
 
@@ -42,7 +42,10 @@ def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_valu
         threads.append(thread)
 
 def run_agent_sca(returned_values, results_file, scan_configuration):
-    returned_values["SCA Scan"] = run_agent_sca_inner(results_file, scan_configuration)       
+    sca_results = run_agent_sca_inner(results_file, scan_configuration)
+    if scan_configuration.link_project and sca_results[2]:
+        link_sca_project(sca_results[2], scan_configuration)
+    returned_values["SCA Scan"] = sca_results
 
 def start_pipeline_scan(scan_configuration: ScanConfiguration):
     policy_file_name = get_policy_file_name(scan_configuration)

@@ -72,6 +72,7 @@ class ScanConfiguration:
     agent_id : str
     srcclr_to_scan : str
     base_cli_directory : str
+    link_project : bool
 
     def append_error(self, errors, field_value, field_name, error_message):
         errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
@@ -302,6 +303,13 @@ class ScanConfiguration:
             required=False
         )
         parser.add_argument(
+            "-lp",
+            "--link_project",
+            help="(optional) Set to link the agent SCA project to the Application profile (requires a workspace name).",
+            required=False,
+            action=argparse.BooleanOptionalAction
+        )
+        parser.add_argument(
             "-sn",
             "--sandbox_name",
             help="(optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.",
@@ -394,5 +402,6 @@ class ScanConfiguration:
         self.git_repo_url = args.git_repo_url
         self.ignore_artifacts = args.ignore_artifact
         self.key_alias = args.key_alias
+        self.link_project = args.link_project
 
         self.validate_input()

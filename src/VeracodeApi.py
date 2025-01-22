@@ -5,6 +5,7 @@ from veracode_api_py.policy import Policies
 from veracode_api_py.sca import Workspaces, SCAApplications
 from veracode_api_py.policy import Policies
 from ErrorHandler import exit_with_error
+import pandas as pd
 
 def parse_custom_field(custom_field):
     return {
@@ -12,7 +13,7 @@ def parse_custom_field(custom_field):
         "value": custom_field.value
     }
 
-def try_to_run_and_return(input_parameter: str, function_to_run, scan_configuration):
+def try_to_run_and_return(input_parameter, function_to_run, scan_configuration):
     try:
         return function_to_run(input_parameter)
     except Exception as e:
@@ -177,3 +178,28 @@ def expire_srcclr_token(scan_configuration):
 def inner_expire_srcclr_token(scan_configuration):
     Workspaces().delete_agent(scan_configuration.workspace_guid, scan_configuration.agent_id)
     return True
+
+def link_sca_project(sca_results_message, scan_configuration):
+    return try_to_run_and_return({"scan_id": sca_results_message, "scan_configuration": scan_configuration}, inner_link_sca_project, scan_configuration)
+
+def inner_link_sca_project(linking_information):
+    scan_id = linking_information["scan_id"]
+    scan_configuration = linking_information["scan_configuration"]
+    workspace_id = scan_configuration.workspace_guid
+    scan = Workspaces().get_scan(scan_id)
+    project_id = get_project_id_for_scan_date(workspace_id, scan["date"])
+    if project_id:
+        SCAApplications().link_project(scan_configuration.application_guid, project_id)
+
+def get_project_id_for_scan_date(workspace_id, scan_date):
+    projects = Workspaces().get_projects(workspace_id)
+    if projects:
+        for project in projects:
+            if are_equal_datetimes(project["last_scan_date"], scan_date):
+                return project["id"]
+    return ""
+
+def are_equal_datetimes(first_datetime, second_datetime):
+    first_datetime = pd.to_datetime(first_datetime)
+    second_datetime = pd.to_datetime(second_datetime)
+    return first_datetime == second_datetime
