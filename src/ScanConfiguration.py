@@ -142,9 +142,6 @@ class ScanConfiguration:
         if self.scan_type == 'artifact':
             errors = self.validate_field(errors, self.ignore_artifact, "-ia/--ignore_artifact", "Ignore Artifact is only available for --scan_type 'folder'", lambda collection_description: bool(collection_description))
 
-
-        #ignore_artifact
-
         errors = self.validate_field(errors, self.source, "-s/--source", f"File not found {self.source}", lambda source: not os.path.exists(source))
         if self.pipeline_scan and self.sandbox_name:
             errors = self.append_error(errors, self.sandbox_name, "-sn/--sandbox_name", "Pipeline scan does not support a sandbox name")
