@@ -14,7 +14,7 @@ def handle_error(fail_on_error, error_message, return_code, scan_id, scan_config
     return return_code, error_message, scan_id
 
 def call_subprocess(process_id, scan_configuration: ScanConfiguration, fail_on_error: bool, commands : list[str],
-                    additional_env=[], results_file=None, shell=False):
+                    additional_env=[], results_file=None, shell=False, return_line_filter=[]):
     try:
         environment = os.environ.copy()
         environment["VERACODE_API_KEY_ID"] = scan_configuration.vid
@@ -26,19 +26,22 @@ def call_subprocess(process_id, scan_configuration: ScanConfiguration, fail_on_e
         scan_id = ''
         if results_file:
             with open(results_file, 'w') as output_file:
-                last_line, scan_id = handle_output(process_id, process, output_file)
+                last_line, scan_id = handle_output(process_id, process, output_file, return_line_filter)
         else:
-            last_line, scan_id = handle_output(process_id, process, None)
+            last_line, scan_id = handle_output(process_id, process, None, return_line_filter)
         process.wait()
         return handle_error(fail_on_error, last_line, process.returncode, scan_id, scan_configuration)
     except subprocess.CalledProcessError as calledProcessError:
         return handle_error(fail_on_error, calledProcessError.output, calledProcessError.returncode, '', scan_configuration)
 
-def handle_output(process_id, process, output_file):
+def handle_output(process_id, process, output_file, return_line_filter):
     last_line = ""
     scan_id = ""
     for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-        last_line = line.strip() if line.strip() else last_line
+        if return_line_filter:
+            last_line = last_line if last_line else all_match(line, return_line_filter)
+        else:
+            last_line = line.strip() if line.strip() else last_line
         print(f"{PROCESS_ID_COLOUR}{process_id}:{Style.reset} {line}", end='')
         if output_file:
             print(line, file=output_file, end='')
@@ -46,3 +49,9 @@ def handle_output(process_id, process, output_file):
             scan_id = line.split(" ")[-1].strip()
     return last_line, scan_id
     
+def all_match(line, return_line_filter):
+    for filter in return_line_filter:
+        if not filter in line:
+            return ""
+
+    return line

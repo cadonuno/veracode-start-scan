@@ -13,21 +13,29 @@ from VeracodeApi import expire_srcclr_token, link_sca_project
 ERROR_PREFIX_COLOUR = Fore.rgb('136', '0', '21')
 
 def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, policy_file_name, results_json, results_txt):
-    returned_values[scan_target] = call_subprocess(process_id=f"Scanning {scan_target}", scan_configuration=scan_configuration, fail_on_error=False, 
-                                commands=[scan_configuration.veracode_cli_location, "static", "scan", 
+    commands = [scan_configuration.veracode_cli_location, "static", "scan", 
                                             os.path.join(scan_configuration.source, scan_target), 
                                             "--project-name", scan_configuration.application,
                                             "--app-id", scan_configuration.application_guid,
-                                            "--policy-file", f"{policy_file_name}", "--results-file", results_json,
-                                            "--summary-output", results_txt])
+                                            "--policy-file", f"{policy_file_name}", 
+                                            "--results-file", results_json,
+                                            "--summary-output", results_txt,
+                                            "--project-name", scan_configuration.application]
+    if scan_configuration.verbose:
+        commands.append("--verbose")
+    returned_values[scan_target] = call_subprocess(process_id=f"Scanning {scan_target}", scan_configuration=scan_configuration, fail_on_error=False, commands=commands)
 
 def run_agent_sca_inner(results_file, scan_configuration):
+    commands=["srcclr", "scan", scan_configuration.srcclr_to_scan, "--recursive", "--allow-dirty"]
+    if scan_configuration.verbose:
+        commands.append("--debug")
     return call_subprocess(process_id="Running SCA Scan", scan_configuration=scan_configuration, fail_on_error=False, 
-                            commands=["srcclr", "scan", scan_configuration.srcclr_to_scan, "--recursive", "--allow-dirty"],
+                            commands=commands,
                             additional_env=[{"name": "SRCCLR_API_URL", "value": scan_configuration.srcclr_api_url},
                                             {"name": "SRCCLR_API_TOKEN", "value": scan_configuration.srcclr_token}],
                             results_file=results_file,
-                            shell=True)
+                            shell=True,
+                            return_line_filter=["Full Report Details", "https://"])
 
 
 def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_values, threads, base_results_location):

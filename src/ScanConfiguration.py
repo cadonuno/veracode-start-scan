@@ -73,6 +73,7 @@ class ScanConfiguration:
     srcclr_to_scan : str
     base_cli_directory : str
     link_project : bool
+    verbose : bool
 
     def append_error(self, errors, field_value, field_name, error_message):
         errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
@@ -112,7 +113,7 @@ class ScanConfiguration:
         if self.application_guid and self.key_alias:
             show_warning("Application already exists, key alias will be IGNORED")
 
-        errors = self.validate_field_size(errors, self.description, "-d/--description", "Description", 4000)
+        errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
         if not self.application_guid and not self.business_criticality:
             self.append_error(errors, "", "-bc/--business_criticality", "For scanning a new application, Business Criticality is mandatory")
@@ -194,7 +195,7 @@ class ScanConfiguration:
             required=True
         )
         parser.add_argument(
-            "-d",
+            "-desc",
             "--description",
             help="(optional) Description of the application - if the application already exists, it WILL be updated.",
             required=False
@@ -289,7 +290,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-ps",
             "--pipeline_scan",
-            help="Set to run a pipeline scan. If set, will fetch the policy assigned to the application profile (if one exists) before proceeding - does NOT support a Sandbox name.",
+            help="(optional) Set to run a pipeline scan. If set, will fetch the policy assigned to the application profile (if one exists) before proceeding - does NOT support a Sandbox name.",
             required=False,
             action=argparse.BooleanOptionalAction
         )
@@ -370,6 +371,13 @@ class ScanConfiguration:
             action="append",
             required=False
         )
+        parser.add_argument(
+            "-d",
+            "--debug",
+            help="(optional) Set to output verbose logging.",
+            required=False,
+            action=argparse.BooleanOptionalAction
+        )
 
         args = parser.parse_args()
         self.application = args.application
@@ -400,5 +408,6 @@ class ScanConfiguration:
         self.ignore_artifacts = args.ignore_artifact
         self.key_alias = args.key_alias
         self.link_project = args.link_project
+        self.verbose = args.debug
 
         self.validate_input()
