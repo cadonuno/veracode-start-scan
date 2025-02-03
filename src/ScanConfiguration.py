@@ -191,7 +191,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-a",
             "--application",
-            help="Applications to scan - if it does not exist, it will be created.",
+            help="Name of the application to scan - if it does not exist, it will be created.",
             required=True
         )
         parser.add_argument(

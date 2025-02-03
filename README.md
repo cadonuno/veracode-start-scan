@@ -26,7 +26,7 @@ API Credentials:
 - `-vkey`, `--veracode_api_key_secret` - Veracode API key secret to use - a non-human/API account is recommended.
 
 Application Parameters:
-- `-a`, `--application` - Applications to scan - if it does not exist, it will be created.
+- `-a`, `--application` - Name of the application to scan - if it does not exist, it will be created.
 - `-desc`, `--description` - (optional) Description of the application - if the application already exists, it WILL be updated.
 - `-bc`, `--business_criticality` - (optional)  Business criticality of the application - if the application already exists, it WILL be updated.
 - `-ac`, `--application_custom_field` - (optional) Colon(:)-separated key-value pairs for the custom fields to set for the APPLICATION PROFILE, takes 0 or more. I.e.: A Field:Some Value.
