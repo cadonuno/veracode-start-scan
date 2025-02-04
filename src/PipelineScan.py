@@ -6,11 +6,9 @@ from ScanConfiguration import ScanConfiguration
 from VeracodeCli import call_subprocess
 from ScanConfiguration import ScanConfiguration
 from VeracodeCli import get_policy_file_name
-from ErrorHandler import exit_with_error
-from colored import Fore, Style
+from ErrorHandler import exit_with_error, try_generate_error_message
 from VeracodeApi import expire_srcclr_token, link_sca_project
 
-ERROR_PREFIX_COLOUR = Fore.rgb('136', '0', '21')
 
 def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, policy_file_name, results_json, results_txt):
     commands = [scan_configuration.veracode_cli_location, "static", "scan", 
@@ -77,11 +75,8 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
     total_return_code = 0
     errors = []
     for target, returned_value in returned_values.items():
-        return_code = returned_value[0]
-        error_message = returned_value[1]
-        if return_code != 0:
-            total_return_code += abs(return_code)
-            errors.append(f"{ERROR_PREFIX_COLOUR}Failed scan for {target}:{Style.reset} {error_message}.")
+        total_return_code += abs(returned_value[0])
+        errors=try_generate_error_message(return_code=returned_value[0], error_message=returned_value[1], target=target)
     if scan_configuration.fail_build and total_return_code != 0:
         exit_with_error(errors, return_value=total_return_code, scanConfiguration=scan_configuration)
     else:

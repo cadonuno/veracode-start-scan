@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 from Constants import ALLOWED_CRITICALITIES, SCAN_TYPES, SCA_URL_MAP
-from VeracodeApi import get_application_id, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
+from VeracodeApi import get_application, get_application_by_guid, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
 from veracode_api_py.apihelper import get_region_for_api_credential
 from ErrorHandler import exit_with_error, show_warning
 
@@ -109,7 +109,22 @@ class ScanConfiguration:
         os.environ['veracode_api_key_secret'] = self.vkey
         errors = []
         errors = self.validate_field_size(errors, self.application, "-a/--application", "Application name", 256)
-        self.application_guid = get_application_id(self.application, self)
+        application = None
+        if self.application:
+            application = get_application(self.application, self)
+        elif self.application_guid:
+            application = get_application_by_guid(self.application_guid, self)
+            if application:
+                self.application = application["profile"]["name"]
+            else:
+                self.append_error(errors, self.application_guid, "-ai/--application_guid", "No application found for GUID")
+        else:
+            errors.append(f"ERROR: either '-a/--application' (Application Name) or '-ai/--application_guid' (Application GUID) are required to run a scan")
+
+        if application:
+            self.application_guid = application["guid"]
+            self.application_legacy_id = str(application["id"])
+            
         if self.application_guid and self.key_alias:
             show_warning("Application already exists, key alias will be IGNORED")
 
@@ -189,10 +204,16 @@ class ScanConfiguration:
 
         #Application Parameters:
         parser.add_argument(
+            "-ai",
+            "--application_guid",
+            help="GUID of the application to scan.",
+            required=False
+        )
+        parser.add_argument(
             "-a",
             "--application",
-            help="Name of the application to scan - if it does not exist, it will be created.",
-            required=True
+            help="Name of the application to scan, replaces --application_guid and will create an application if it doesn't exist.",
+            required=False
         )
         parser.add_argument(
             "-desc",
@@ -381,6 +402,7 @@ class ScanConfiguration:
 
         args = parser.parse_args()
         self.application = args.application
+        self.application_guid = args.application_guid
         self.description = args.description
         self.business_criticality = args.business_criticality
         self.team_list = self.parse_team_list(args.team)

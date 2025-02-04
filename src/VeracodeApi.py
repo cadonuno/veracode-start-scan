@@ -31,16 +31,22 @@ def inner_get_business_unit_id(business_unit_name: str):
             return match["bu_id"]
     return None
 
-def get_application_id(application_name: str, scan_configuration):
-    return try_to_run_and_return(application_name, inner_get_application_id, scan_configuration)
+def get_application_by_guid(application_guid: str, scan_configuration):
+    return try_to_run_and_return(application_guid, inner_get_application_by_guid, scan_configuration)
 
-def inner_get_application_id(application_name: str):
+def inner_get_application_by_guid(application_guid: str):
+    return Applications().get(application_guid)
+
+def get_application(application_name: str, scan_configuration):
+    return try_to_run_and_return(application_name, inner_get_application, scan_configuration)
+
+def inner_get_application(application_name: str):
     matches = Applications().get_by_name(application_name)
     if not matches or len(matches) == 0:
         return None
     for match in matches:
         if match["profile"]["name"] == application_name.strip():
-            return match["guid"]
+            return match
     return None
 
 
