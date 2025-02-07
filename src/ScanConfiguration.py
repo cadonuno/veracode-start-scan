@@ -86,9 +86,11 @@ class ScanConfiguration:
         return errors
 
     def validate_list(self, errors, list_to_check, parameter_name, test_funtion, field_value_function, error_function):
-        for custom_field in list_to_check:
-            if custom_field and test_funtion(custom_field):
-                errors = self.append_error(errors, field_value_function(custom_field), parameter_name, error_function(custom_field))
+        if not list_to_check:
+            return
+        for field_to_check in list_to_check:
+            if field_to_check and test_funtion(field_to_check):
+                errors = self.append_error(errors, field_value_function(field_to_check), parameter_name, error_function(field_to_check))
 
         return errors
     
@@ -225,7 +227,7 @@ class ScanConfiguration:
             "-bc",
             "--business_criticality",
             help="(optional) Business criticality of the application - if the application already exists, it WILL be updated.",
-            required=True
+            required=False
         )
         parser.add_argument(
             "-ac",

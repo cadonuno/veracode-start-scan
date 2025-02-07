@@ -3,13 +3,14 @@ from VeracodeApi import create_business_unit, create_team, create_application, c
 
 def pre_scan_actions(scan_configuration: ScanConfiguration):
     new_team_list = []
-    for team in scan_configuration.team_list:
-        new_team = team
-        if not team.guid:
-            new_team.guid, new_team.legacy_id = create_team(new_team.name, scan_configuration)
-        new_team_list.append(new_team)
+    if scan_configuration.team_list:
+        for team in scan_configuration.team_list:
+            new_team = team
+            if not team.guid:
+                new_team.guid, new_team.legacy_id = create_team(new_team.name, scan_configuration)
+            new_team_list.append(new_team)
 
-    scan_configuration.team_list = new_team_list
+        scan_configuration.team_list = new_team_list
     
     if not scan_configuration.business_unit_guid:
         scan_configuration.business_unit_guid = create_business_unit(scan_configuration)
