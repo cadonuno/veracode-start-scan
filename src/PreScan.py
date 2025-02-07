@@ -6,7 +6,7 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
     for team in scan_configuration.team_list:
         new_team = team
         if not team.guid:
-            new_team.guid = create_team(new_team.name, scan_configuration)
+            new_team.guid, new_team.legacy_id = create_team(new_team.name, scan_configuration)
         new_team_list.append(new_team)
 
     scan_configuration.team_list = new_team_list

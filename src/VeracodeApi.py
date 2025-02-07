@@ -81,18 +81,18 @@ def get_team_ids(team_name: str, scan_configuration):
 def inner_get_team_ids(team_name):
     matches = Teams().get_all()
     if not matches or len(matches) == 0:
-        return None
+        return None, None
     for match in matches:
         if match["team_name"] == team_name.strip():
             return match["team_id"], match["team_legacy_id"]
-    return None
+    return None, None
 
 def create_team(team_name: str, scan_configuration):
     return try_to_run_and_return(team_name, inner_create_team, scan_configuration)
 
 def inner_create_team(team_name: str):
     team = Teams().create(team_name)
-    return team['team_id']
+    return team['team_id'], team["team_legacy_id"]
 
 def create_business_unit(scan_configuration):
     return try_to_run_and_return(scan_configuration, inner_create_business_unit, scan_configuration)
