@@ -1,4 +1,4 @@
-ALLOWED_CRITICALITIES = ["veryhigh", "high", "medium", "low", "verylow"]
+ALLOWED_CRITICALITIES = ["VERY HIGH", "HIGH", "MEDIUM", "LOW", "VERY LOW"]
 SCAN_TYPES = ["folder", "artifact"]
 PACKAGER_OUTPUT = "./.verascan"
 SCA_URL_MAP = {

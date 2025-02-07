@@ -130,10 +130,12 @@ class ScanConfiguration:
         if self.application_guid and self.key_alias:
             show_warning("Application already exists, key alias will be IGNORED")
 
-        errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)
-        errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
+        errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)   
+        self.business_criticality = self.business_criticality.strip().upper()
+        
+        errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: Very High, High, Medium, Low, Very Low", lambda business_criticality: not business_criticality in ALLOWED_CRITICALITIES)
+        self.business_criticality = self.business_criticality.replace(" ", "_")
 
-        self.business_criticality = self.business_criticality.replace(" ", "").upper()
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         errors = self.validate_field_size(errors, self.git_repo_url, "-url/--git_repo_url", "Git Repo URL", 512)
 
