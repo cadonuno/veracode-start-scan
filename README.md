@@ -30,7 +30,7 @@ Application Parameters:
 - `-ai`, `--application_guid` - GUID of the application to scan.
 - `-a`, `--application` - Name of the application to scan, replaces --application_guid and will create an application if it doesn't exist.
 - `-desc`, `--description` - (optional) Description of the application - if the application already exists, it WILL be updated.
-- `-bc`, `--business_criticality` - (optional)  Business criticality of the application - if the application already exists, it WILL be updated.
+- `-bc`, `--business_criticality` - Business criticality of the application - if the application already exists, it WILL be updated.
 - `-ac`, `--application_custom_field` - (optional) Colon(:)-separated key-value pairs for the custom fields to set for the APPLICATION PROFILE, takes 0 or more. I.e.: A Field:Some Value.
 - `-url`, `--git_repo_url` - (optional) URL of the git repository scanned.
 - `-ka`, `--key_alias` - (optional) If using CMKs, sets the key alias to use for this application - if the application already exists, will NOT be updated

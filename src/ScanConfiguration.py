@@ -132,10 +132,8 @@ class ScanConfiguration:
 
         errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: VeryHigh, High, Medium, Low, VeryLow", lambda business_criticality: not business_criticality.replace(" ", "").lower() in ALLOWED_CRITICALITIES)
-        if not self.application_guid and not self.business_criticality:
-            self.append_error(errors, "", "-bc/--business_criticality", "For scanning a new application, Business Criticality is mandatory")
 
-        self.business_criticality = self.business_criticality.upper()
+        self.business_criticality = self.business_criticality.replace(" ", "").upper()
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         errors = self.validate_field_size(errors, self.git_repo_url, "-url/--git_repo_url", "Git Repo URL", 512)
 
@@ -226,8 +224,8 @@ class ScanConfiguration:
         parser.add_argument(
             "-bc",
             "--business_criticality",
-            help="(optional) Business criticality of the application - if the application already exists, it WILL be updated.",
-            required=False
+            help="Business criticality of the application - if the application already exists, it WILL be updated.",
+            required=True
         )
         parser.add_argument(
             "-ac",
