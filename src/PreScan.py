@@ -12,7 +12,7 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
 
         scan_configuration.team_list = new_team_list
     
-    if not scan_configuration.business_unit_guid:
+    if scan_configuration.business_unit and not scan_configuration.business_unit_guid:
         scan_configuration.business_unit_guid = create_business_unit(scan_configuration)
 
     if not scan_configuration.application_guid:
@@ -23,10 +23,11 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
     if scan_configuration.pipeline_scan:
         scan_configuration.policy_name = get_application_policy_name(scan_configuration.application_guid, scan_configuration)
 
-    if not scan_configuration.collection_guid:
-        scan_configuration.collection_guid = create_collection(scan_configuration)
-    else:
-        update_collection(scan_configuration)
+    if scan_configuration.collection:
+        if not scan_configuration.collection_guid:
+            scan_configuration.collection_guid = create_collection(scan_configuration)
+        else:
+            update_collection(scan_configuration)
 
     if scan_configuration.workspace_name:
         if not scan_configuration.workspace_guid:

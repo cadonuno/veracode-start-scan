@@ -33,47 +33,47 @@ class CustomField:
             self.error = None
 
 class ScanConfiguration:
-    application : str
-    description : str
-    business_criticality : str
-    team_list : list[Team]
-    application_custom_fields : list[CustomField]
-    git_repo_url : str
+    application : str = None
+    description : str = None
+    business_criticality : str = None
+    team_list : list[Team] = []
+    application_custom_fields : list[CustomField] = []
+    git_repo_url : str = None
 
-    collection : str
-    collection_description : str
-    collection_custom_fields : list[CustomField]
+    collection : str = None
+    collection_description : str = None
+    collection_custom_fields : list[CustomField] = []
 
-    business_unit : str
-    business_owner : str
-    business_owner_email : str
+    business_unit : str = None
+    business_owner : str = None
+    business_owner_email : str = None
 
-    scan_type : str
+    scan_type : str = None
 
-    source : str
-    pipeline_scan : bool
-    workspace_name : str
-    sandbox_name : str
-    fail_build : bool
-    vid : str
-    vkey : str
-    scan_timeout : int
-    veracode_cli_location : str
-    veracode_wrapper_location : str
+    source : str = None
+    pipeline_scan : bool = False
+    workspace_name : str = None
+    sandbox_name : str = None
+    fail_build : bool = False
+    vid : str = None
+    vkey : str = None
+    scan_timeout : int = 0
+    veracode_cli_location : str = None
+    veracode_wrapper_location : str = None
 
-    application_guid : str
-    collection_guid : str
-    business_unit_guid : str
-    workspace_guid : str
-    srcclr_token : str
-    sca_agent_name : str
-    policy_name : str
-    srcclr_api_url : str
-    agent_id : str
-    srcclr_to_scan : str
-    base_cli_directory : str
-    link_project : bool
-    verbose : bool
+    application_guid : str = None
+    collection_guid : str = None
+    business_unit_guid : str = None
+    workspace_guid : str = None
+    srcclr_token : str = None
+    sca_agent_name : str = None
+    policy_name : str = None
+    srcclr_api_url : str = None
+    agent_id : str = None
+    srcclr_to_scan : str = None
+    base_cli_directory : str = None
+    link_project : bool = False
+    verbose : bool = False
 
     def append_error(self, errors, field_value, field_name, error_message):
         errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
@@ -87,7 +87,7 @@ class ScanConfiguration:
 
     def validate_list(self, errors, list_to_check, parameter_name, test_funtion, field_value_function, error_function):
         if not list_to_check:
-            return
+            return errors
         for field_to_check in list_to_check:
             if field_to_check and test_funtion(field_to_check):
                 errors = self.append_error(errors, field_value_function(field_to_check), parameter_name, error_function(field_to_check))
@@ -113,6 +113,7 @@ class ScanConfiguration:
         errors = self.validate_field_size(errors, self.application, "-a/--application", "Application name", 256)
         application = None
         if self.application:
+            self.application = self.application.strip()
             application = get_application(self.application, self)
         elif self.application_guid:
             application = get_application_by_guid(self.application_guid, self)
@@ -132,15 +133,16 @@ class ScanConfiguration:
 
         errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)   
         self.business_criticality = self.business_criticality.strip().upper()
-        
+
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: Very High, High, Medium, Low, Very Low", lambda business_criticality: not business_criticality in ALLOWED_CRITICALITIES)
-        self.business_criticality = self.business_criticality.replace(" ", "_")
+        #self.business_criticality = self.business_criticality.replace(" ", "_")
 
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         errors = self.validate_field_size(errors, self.git_repo_url, "-url/--git_repo_url", "Git Repo URL", 512)
 
         errors = self.validate_field_size(errors, self.collection, "-c/--collection", "Collection name", 256)
-        self.collection_guid = get_collection_id(self.collection, self)
+        if self.collection:
+            self.collection_guid = get_collection_id(self.collection, self)
         errors = self.validate_field_size(errors, self.collection_description, "-cd/--collection_description", "Collection Description", 4000)
         errors = self.validate_list(errors, self.collection_custom_fields, "-cc/--collection_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         if not self.collection:
@@ -170,6 +172,8 @@ class ScanConfiguration:
             errors = self.append_error(errors, self.version, "-v/--version", "Pipeline scan does not support a scan name")
         if not self.pipeline_scan and self.workspace_name:
             errors = self.append_error(errors, self.workspace_name, "-wn/--workspace_name", "Agent-based SCA is only supported when running pipeline scans. *Requires the SCA Agent to be installed")
+        if not self.pipeline_scan and not self.version:
+            errors = self.append_error(errors, self.version, "-v/--version", "Scan name is required for Policy and Sandbox scans")
 
         errors = self.validate_field_size(errors, self.workspace_name, "-wn/--workspace_name", "Workspace Name", 512)
         if self.workspace_name:
@@ -194,10 +198,10 @@ class ScanConfiguration:
             exit_with_error(errors, len(errors)*-1, self)
 
     def parse_custom_field_list(self, custom_field_list):
-        return list(map(lambda custom_field: CustomField(custom_field), custom_field_list)) if custom_field_list else None
+        return list(map(lambda custom_field: CustomField(custom_field), custom_field_list)) if custom_field_list else []
 
     def parse_team_list(self, team_list):
-        return list(map(lambda team_name: Team(team_name, self), team_list)) if team_list else None
+        return list(map(lambda team_name: Team(team_name, self), team_list)) if team_list else []
 
     def __init__(self):
         parser = argparse.ArgumentParser(
