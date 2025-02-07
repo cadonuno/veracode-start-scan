@@ -2,6 +2,7 @@
 Allows for simple implementation of a Veracode scanning workflow.
 
 ## Requirements:
+- Python 3.12+
 - The Veracode CLI is installed
 - Java is installed (and added to the system path)
 - The Veracode API wrapper is available in the local system
