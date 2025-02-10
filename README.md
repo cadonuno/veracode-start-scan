@@ -4,6 +4,7 @@ Allows for simple implementation of a Veracode scanning workflow.
 ## Requirements:
 - Python 3.12+
 - The Veracode CLI is installed
+- If using the Veracode Packager (--scan_type "artifact"): the local machine is able to compile the application and the packaging command can run successfully
 - Java is installed (and added to the system path)
 - The Veracode API wrapper is available in the local system
 - To use Agent-based SCA, it needs to be installed in the local system and available through the `srcclr` command
