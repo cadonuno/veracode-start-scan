@@ -123,7 +123,7 @@ def inner_create_application(scan_configuration):
                                         custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.application_custom_fields)), 
                                         bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email,
                                         custom_kms_alias=scan_configuration.key_alias)
-    return application["guid"]
+    return application
 
 def update_application(scan_configuration):
     return try_to_run_and_return(scan_configuration, inner_update_application, scan_configuration)

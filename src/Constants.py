@@ -1,4 +1,5 @@
 ALLOWED_CRITICALITIES = ["VERY HIGH", "HIGH", "MEDIUM", "LOW", "VERY LOW"]
+ALLOWED_DELETE_INCOMPLETE_SCAN = ["0", "1", "2"]
 SCAN_TYPES = ["folder", "artifact"]
 PACKAGER_OUTPUT = "./.verascan"
 SCA_URL_MAP = {

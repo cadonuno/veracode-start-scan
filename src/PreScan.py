@@ -16,7 +16,9 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
         scan_configuration.business_unit_guid = create_business_unit(scan_configuration)
 
     if not scan_configuration.application_guid:
-        scan_configuration.application_guid = create_application(scan_configuration)
+        application = create_application(scan_configuration)
+        scan_configuration.application_guid = application["guid"]
+        scan_configuration.application_legacy_id = str(application["id"])
     else:
         update_application(scan_configuration)
 

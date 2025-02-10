@@ -41,7 +41,7 @@ Collection Parameters:
 - `-cc`, `--collection_custom_field` - (optional) Colon(:)-separated key-value pairs for the custom fields to set for the COLLECTION, takes 0 or more. I.e.: A Field:Some Value.
 
 Both Application and Collection:
-- `-t`, `--team` - (optional) Teams to assign to the application, takes 0 or more - if a team does not exist, it will be created and if the application/collection exists, it WILL be updated.
+- `-t`, `--team` - Teams to assign to the application, takes 1 or more - if a team does not exist, it will be created and if the application/collection exists, it WILL be updated.
 - `-b`, `--business_unit` - (optional) Name of the Business unit to assign to the application AND collection - if the BU does not exist, it will be created and if the application/collection exists, it WILL be updated.
 - `-bo`, `--business_owner` - (optional) Name of the business owner - if the application/collection exists, it WILL be updated.
 - `-boe`, `--business_owner_email` - (optional) E-mail of the business owner - if the application/collection exists, it WILL be updated.
@@ -54,6 +54,7 @@ Scan Parameters:
 - `-lp`, `--link_project` - (optional) Set to link the agent SCA project to the Application profile (requires a workspace name).
 - `-sn`, `--sandbox_name` - (optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.
 - `-v`, `--version` - Name of the scan/version - has to be unique for each application/sandbox combo and does NOT support pipeline scans - mandatory if not using -ps/--pipeline_scan.
+- `-del`, `--delete_incomplete_scan` - (optional) Sets a value for the -deleteincompletescan parameter for the upload and scan action (not supported, or needed, for the pipeline scan).
 - `-sct`, `--scan_timeout` - (optional) Scan timeout (in minutes). If empty or 0, will not wait for Sandbox/Policy scans to complete.
 - `-f`, `--fail_build` - (optional) Set to fail the build if application fails policy evaluation.
 - `-o`, `--override_failure` - (optional) Set to return a 0 on error. This can be used to avoid breaking a pipeline.

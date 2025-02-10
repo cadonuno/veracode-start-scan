@@ -2,7 +2,7 @@ import argparse
 import os
 from pathlib import Path
 from datetime import datetime
-from Constants import ALLOWED_CRITICALITIES, SCAN_TYPES, SCA_URL_MAP
+from Constants import ALLOWED_CRITICALITIES, ALLOWED_DELETE_INCOMPLETE_SCAN, SCAN_TYPES, SCA_URL_MAP
 from VeracodeApi import get_application, get_application_by_guid, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
 from veracode_api_py.apihelper import get_region_for_api_credential
 from ErrorHandler import exit_with_error, show_warning
@@ -62,6 +62,7 @@ class ScanConfiguration:
     veracode_wrapper_location : str = None
 
     application_guid : str = None
+    application_legacy_id : str = None
     collection_guid : str = None
     business_unit_guid : str = None
     workspace_guid : str = None
@@ -74,6 +75,7 @@ class ScanConfiguration:
     base_cli_directory : str = None
     link_project : bool = False
     verbose : bool = False
+    delete_incomplete_scan : int = 0
 
     def append_error(self, errors, field_value, field_name, error_message):
         errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
@@ -124,6 +126,8 @@ class ScanConfiguration:
         else:
             errors.append(f"ERROR: either '-a/--application' (Application Name) or '-ai/--application_guid' (Application GUID) are required to run a scan")
 
+        errors = self.validate_field(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Delete Incomplete Scan must be one of these values: 0, 1, 2", lambda delete_incomplete_scan: not delete_incomplete_scan in ALLOWED_DELETE_INCOMPLETE_SCAN)
+            
         if application:
             self.application_guid = application["guid"]
             self.application_legacy_id = str(application["id"])
@@ -132,10 +136,10 @@ class ScanConfiguration:
             show_warning("Application already exists, key alias will be IGNORED")
 
         errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)   
-        self.business_criticality = self.business_criticality.strip().upper()
 
+        self.business_criticality = self.business_criticality.strip().upper()
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: Very High, High, Medium, Low, Very Low", lambda business_criticality: not business_criticality in ALLOWED_CRITICALITIES)
-        #self.business_criticality = self.business_criticality.replace(" ", "_")
+        self.business_criticality = self.business_criticality.replace(" ", "_")
 
         errors = self.validate_list(errors, self.application_custom_fields, "-ac/--application_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         errors = self.validate_field_size(errors, self.git_repo_url, "-url/--git_repo_url", "Git Repo URL", 512)
@@ -278,9 +282,9 @@ class ScanConfiguration:
         parser.add_argument(
             "-t",
             "--team",
-            help="(optional) Teams to assign to the application, takes 0 or more - if a team does not exist, it will be created and if the application/collection exists, it WILL be updated.",
+            help="Teams to assign to the application, takes 1 or more - if a team does not exist, it will be created and if the application/collection exists, it WILL be updated.",
             action="append",
-            required=False
+            required=True
         )
         parser.add_argument(
             "-b",
@@ -344,6 +348,12 @@ class ScanConfiguration:
             "-v",
             "--version",
             help="Name of the scan/version - has to be unique for each application/sandbox combo and does NOT support pipeline scans - mandatory if not using -ps/--pipeline_scan.",
+            required=False
+        )
+        parser.add_argument(
+            "-del",
+            "--delete_incomplete_scan",
+            help="(optional) Sets a value for the -deleteincompletescan parameter for the upload and scan action (not supported, or needed, for the pipeline scan).",
             required=False
         )
         parser.add_argument(
@@ -437,5 +447,6 @@ class ScanConfiguration:
         self.key_alias = args.key_alias
         self.link_project = args.link_project
         self.verbose = args.debug
+        self.delete_incomplete_scan = args.delete_incomplete_scan
 
         self.validate_input()
