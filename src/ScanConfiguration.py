@@ -108,9 +108,7 @@ class ScanConfiguration:
             current_directory = Path(current_directory).parent.absolute()
         return current_directory if current_directory else scan_source
 
-    def validate_input(self):
-        os.environ['veracode_api_key_id'] = self.vid
-        os.environ['veracode_api_key_secret'] = self.vkey
+    def validate_input(self):        
         errors = []
         errors = self.validate_field_size(errors, self.application, "-a/--application", "Application name", 256)
         application = None
@@ -417,6 +415,9 @@ class ScanConfiguration:
         )
 
         args = parser.parse_args()
+
+        os.environ['veracode_api_key_id'] = args.veracode_api_key_id
+        os.environ['veracode_api_key_secret'] = args.veracode_api_key_secret
         self.application = args.application
         self.application_guid = args.application_guid
         self.description = args.description
