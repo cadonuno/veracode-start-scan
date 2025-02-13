@@ -150,10 +150,13 @@ def update_collection(scan_configuration):
     return try_to_run_and_return(scan_configuration, inner_update_collection, scan_configuration)
 
 def inner_update_collection(scan_configuration):
+    original_collection = Collections().get(guid=scan_configuration.collection_guid)
+    assets=list(map(lambda asset: asset["guid"], original_collection["asset_infos"]))
+    if not scan_configuration.application_guid in assets:
+        assets.append(scan_configuration.application_guid)
     collection = Collections().update(guid=scan_configuration.collection_guid, name=scan_configuration.collection, description=scan_configuration.collection_description,
                                     business_unit_guid=scan_configuration.business_unit_guid, 
-                                    custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.collection_custom_fields)),
-                                    assets=[scan_configuration.application_guid])
+                                    custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.collection_custom_fields)), assets=assets)
     return collection["guid"]
 
 def create_workspace(scan_configuration):
