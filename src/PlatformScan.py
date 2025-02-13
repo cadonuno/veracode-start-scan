@@ -31,7 +31,7 @@ def start_platform_scan(scan_configuration: ScanConfiguration):
         scan_command.append("-appid")
         scan_command.append(scan_configuration.application_legacy_id)
 
-    scan_type_prefix = f"{"Sandbox" if scan_configuration.sandbox_name else "Policy"} Scan"
+    scan_type_prefix = f"{'Sandbox' if scan_configuration.sandbox_name else 'Policy'} Scan"
     returned_value = call_subprocess(f"{scan_type_prefix}", scan_configuration=scan_configuration, fail_on_error=False, commands=scan_command)
     errors = try_generate_error_message(return_code=returned_value[0], error_message=returned_value[1], target=scan_type_prefix)
     if scan_configuration.fail_build and returned_value[0] != 0:

@@ -1,5 +1,6 @@
 import argparse
 import os
+import urllib.parse
 from pathlib import Path
 from datetime import datetime
 from Constants import ALLOWED_CRITICALITIES, ALLOWED_DELETE_INCOMPLETE_SCAN, SCAN_TYPES, SCA_URL_MAP
@@ -77,13 +78,21 @@ class ScanConfiguration:
     verbose : bool = False
     delete_incomplete_scan : int = 0
 
-    def append_error(self, errors, field_value, field_name, error_message):
-        errors.append(f"ERROR: '{field_value}' is not a valid value for the '{field_name}' parameter - {error_message}")
+    proxy_url : str = None
+    proxy_port : str = None
+    proxy_username : str = None
+    proxy_password : str = None
+
+    def hide_value(self, value):
+        return "*" * len(value)
+
+    def append_error(self, errors, field_value, field_name, error_message, mask_value=False):
+        errors.append(f"ERROR: '{(self.hide_value(field_value) if mask_value else field_value)}' is not a valid value for the '{field_name}' parameter - {error_message}")
         return errors
 
-    def validate_field(self, errors, field_value, field_name, error_message, check_function):
+    def validate_field(self, errors, field_value, field_name, error_message, check_function, mask_value=False):
         if field_value and check_function(field_value):
-            errors = self.append_error(errors, field_value, field_name, error_message)
+            errors = self.append_error(errors, field_value, field_name, error_message, mask_value)
 
         return errors
 
@@ -107,6 +116,27 @@ class ScanConfiguration:
         while current_directory and not self.has_git_folder(current_directory):
             current_directory = Path(current_directory).parent.absolute()
         return current_directory if current_directory else scan_source
+
+    def set_proxy_environment(self, proxy_url: str, proxy_port: str, proxy_username: str, proxy_password: str):
+        proxy_url = proxy_url.strip().lower()
+        proxy_port = proxy_port.strip().lower()
+
+        protocol = "https" if proxy_url.startswith("https:") else "http"
+        proxy_url = proxy_url.replace("https://", "").replace("http://", "")
+
+        proxy_to_use = f"{proxy_url}:{proxy_port}"
+        if proxy_username:
+            auth_in_url = f"{urllib.parse.quote(proxy_username, safe='')}"
+            if proxy_password:
+                auth_in_url = f"{auth_in_url}:{urllib.parse.quote(proxy_password, safe='')}"
+
+            proxy_to_use = f"{auth_in_url}@{proxy_to_use}"
+
+        proxy_to_use = f"{protocol}://{proxy_to_use}"
+        os.environ['http_proxy'] = proxy_to_use 
+        os.environ['HTTP_PROXY'] = proxy_to_use
+        os.environ['https_proxy'] = proxy_to_use
+        os.environ['HTTPS_PROXY'] = proxy_to_use
 
     def validate_input(self):        
         errors = []
@@ -162,7 +192,7 @@ class ScanConfiguration:
         self.scan_type = self.scan_type.replace(" ", "").lower() if self.scan_type else ""
         errors = self.validate_field(errors, self.scan_type, "-st/--scan_type", "Type must be one of these values: folder, artifact", lambda scan_type: not scan_type in SCAN_TYPES)
         if self.scan_type == 'artifact':
-            errors = self.validate_field(errors, self.ignore_artifact, "-ia/--ignore_artifact", "Ignore Artifact is only available for --scan_type 'folder'", lambda collection_description: bool(collection_description))
+            errors = self.validate_field(errors, self.ignore_artifacts, "-ia/--ignore_artifact", "Ignore Artifact is only available for --scan_type 'folder'", lambda collection_description: bool(collection_description))
 
         errors = self.validate_field(errors, self.source, "-s/--source", f"File not found {self.source}", lambda source: not os.path.exists(source))
         if self.pipeline_scan and self.sandbox_name:
@@ -196,8 +226,20 @@ class ScanConfiguration:
         if not os.path.isdir(self.base_cli_directory):
             self.base_cli_directory = os.path.dirname(self.base_cli_directory)
 
+        if not self.proxy_url:
+            errors = self.validate_field(errors, self.proxy_port, "-pport/--proxy_port", "To use proxy, a URL must be set", lambda port: bool(port))
+            errors = self.validate_field(errors, self.proxy_username, "-puser/--proxy_username", "To use proxy, a URL must be set", lambda username: bool(username))
+            errors = self.validate_field(errors, self.proxy_password, "-ppass/--proxy_password", "To use proxy, a URL must be set", lambda password: bool(password), mask_value=True)
+        else:
+            if not self.proxy_port:            
+                errors = self.append_error(errors, "''", "-pport/--proxy_port", "To use proxy, a port must be set")
+            if self.proxy_password and not self.proxy_username:
+                errors = self.append_error(errors, "''", "-ppass/--proxy_password", "A proxy password requires a proxy username (-puser/--proxy_username)", mask_value=True)
+
         if errors:
             exit_with_error(errors, len(errors)*-1, self)
+        if self.proxy_url:
+            self.set_proxy_environment(self.proxy_url, self.proxy_port, self.proxy_username, self.proxy_password)
 
     def parse_custom_field_list(self, custom_field_list):
         return list(map(lambda custom_field: CustomField(custom_field), custom_field_list)) if custom_field_list else []
@@ -360,11 +402,36 @@ class ScanConfiguration:
             help="Veracode API key ID to use - a non-human/API account is recommended.",
             required=True
         )
+
         parser.add_argument(
             "-vkey",
             "--veracode_api_key_secret",
             help="Veracode API key secret to use - a non-human/API account is recommended.",
             required=True
+        )
+        parser.add_argument(
+            "-purl",
+            "--proxy_url",
+            help="(Optional) URL of proxy server to use.",
+            required=False
+        )
+        parser.add_argument(
+            "-pport",
+            "--proxy_port",
+            help="(Optional) Port of proxy server to use.",
+            required=False
+        )
+        parser.add_argument(
+            "-puser",
+            "--proxy_username",
+            help="(Optional) Username to use to authenticate to proxy.",
+            required=False
+        )
+        parser.add_argument(
+            "-ppass",
+            "--proxy_password",
+            help="(Optional) Password to use to authenticate to proxy.",
+            required=False
         )
         parser.add_argument(
             "-sct",
@@ -449,5 +516,9 @@ class ScanConfiguration:
         self.link_project = args.link_project
         self.verbose = args.debug
         self.delete_incomplete_scan = args.delete_incomplete_scan
+        self.proxy_url = args.proxy_url
+        self.proxy_port = args.proxy_port
+        self.proxy_username = args.proxy_username
+        self.proxy_password = args.proxy_password
 
         self.validate_input()

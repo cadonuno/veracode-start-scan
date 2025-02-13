@@ -27,6 +27,12 @@ API Credentials:
 - `-vid`, `--veracode_api_key_id` - Veracode API key ID to use - a non-human/API account is recommended.
 - `-vkey`, `--veracode_api_key_secret` - Veracode API key secret to use - a non-human/API account is recommended.
 
+Proxy:
+- `-purl`, `--proxy_url` - (Optional) URL of proxy server to use.
+- `-pport`, `--proxy_port` - (Optional) Port of proxy server to use.
+- `-puser`, `--proxy_username` - (Optional) Username to use to authenticate to proxy.
+- `-ppass`, `--proxy_password` - (Optional) Password to use to authenticate to proxy.
+
 Application Parameters:
 - `-ai`, `--application_guid` - GUID of the application to scan.
 - `-a`, `--application` - Name of the application to scan, replaces --application_guid and will create an application if it doesn't exist.
