@@ -61,7 +61,7 @@ def save_sbom_file(sbom_json, scan_configuration):
     sbom_location = os.path.join(get_absolute_file_path(scan_configuration.base_cli_directory, "scan_results"), f"{scan_configuration.application}-SBOM-{scan_configuration.sbom_type}.json")
     with open(sbom_location, 'w') as output_file:
         output_file.write(json.dumps(sbom_json, indent=2))
-    print(f"{PROCESS_ID_COLOUR}Veracode SBOM:{Style.reset} {scan_configuration.sbom_type} SBOM saved at: {sbom_location}", end='')
+    print(f"{PROCESS_ID_COLOUR}Veracode SBOM:{Style.reset} {scan_configuration.sbom_type} SBOM saved to: {sbom_location}")
 
 def get_absolute_file_path(base_directory, file_name):
     return os.path.join(base_directory, file_name)
