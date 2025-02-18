@@ -3,7 +3,7 @@ import os
 import urllib.parse
 from pathlib import Path
 from datetime import datetime
-from Constants import ALLOWED_CRITICALITIES, ALLOWED_DELETE_INCOMPLETE_SCAN, SCAN_TYPES, SCA_URL_MAP
+from Constants import ALLOWED_CRITICALITIES, ALLOWED_DELETE_INCOMPLETE_SCAN, SBOM_TYPES, SCAN_TYPES, SCA_URL_MAP
 from VeracodeApi import get_application, get_application_by_guid, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
 from veracode_api_py.apihelper import get_region_for_api_credential
 from ErrorHandler import exit_with_error, show_warning
@@ -67,6 +67,8 @@ class ScanConfiguration:
     collection_guid : str = None
     business_unit_guid : str = None
     workspace_guid : str = None
+    project_guid : str = None
+    sbom_type : str = None
     srcclr_token : str = None
     sca_agent_name : str = None
     policy_name : str = None
@@ -213,6 +215,10 @@ class ScanConfiguration:
             now = datetime.now()
             self.sca_agent_name = f"{now.year}{now.month}{now.day}{now.hour}{now.minute}{now.second}{now.microsecond}"
             self.srcclr_api_url = SCA_URL_MAP[get_region_for_api_credential(self.vid)]
+        self.sbom_type = self.sbom_type.replace(" ", "").lower() if self.sbom_type else ""
+        errors = self.validate_field(errors, self.sbom_type, "-sbom/--sbom_type", "SBOM Type must be one of these values: cyclonedx, spdx", lambda sbom_type: not sbom_type in SBOM_TYPES)
+        if self.sbom_type and not self.scan_timeout and not self.workspace_name:
+            errors = self.append_error(errors, self.sbom_type, "-sbom/--sbom_type", "For fetching an SBOM for a policy or sandbox scan, --scan_timeout needs to be set")
 
         errors = self.validate_field_size(errors, self.version, "-v/--version", "Scan name", 256)
 
@@ -372,6 +378,12 @@ class ScanConfiguration:
             required=False
         )
         parser.add_argument(
+            "-sbom",
+            "--sbom_type",
+            help="(optional) Set the type of SBOM to fetch for the project after the scan - if using Policy/Sandbox scan, requires a scan_timeout.",
+            required=False,
+        )
+        parser.add_argument(
             "-lp",
             "--link_project",
             help="(optional) Set to link the agent SCA project to the Application profile (requires a workspace name).",
@@ -501,6 +513,7 @@ class ScanConfiguration:
         self.source = args.source
         self.pipeline_scan = args.pipeline_scan
         self.workspace_name = args.workspace_name
+        self.sbom_type = args.sbom_type
         self.sandbox_name = args.sandbox_name
         self.version = args.version
         self.fail_build = args.fail_build        

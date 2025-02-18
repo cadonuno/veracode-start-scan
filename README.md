@@ -58,6 +58,7 @@ Scan Parameters:
 - `-s`, `--source` - Source for the scan. For 'folder', will call the Veracode packager on it, otherwise, will send it directly to the scanner.
 - `-ps`, `--pipeline_scan` - (optional) Set to run a pipeline scan. If set, will fetch the policy assigned to the application profile (if one exists) before proceeding - does NOT support a Sandbox name.
 - `-wn`, `--workspace_name` - (optional) Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run alongside the Pipeline Scan.
+- `-sbom`, `--sbom_type` - (optional) Set the type of SBOM to fetch for the project after the scan - if using Policy/Sandbox scan, requires a scan_timeout.
 - `-lp`, `--link_project` - (optional) Set to link the agent SCA project to the Application profile (requires a workspace name).
 - `-sn`, `--sandbox_name` - (optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.
 - `-v`, `--version` - Name of the scan/version - has to be unique for each application/sandbox combo and does NOT support pipeline scans - mandatory if not using -ps/--pipeline_scan.

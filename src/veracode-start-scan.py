@@ -3,6 +3,7 @@ from PipelineScan import start_pipeline_scan
 from PlatformScan import start_platform_scan
 from VeracodeCli import package_application
 from PreScan import pre_scan_actions
+from ErrorHandler import exit_with_error
 import os
 
 def main():
@@ -19,6 +20,9 @@ def main():
 
         if scan_configuration.scan_type == 'folder':
             scan_configuration.source = package_application(scan_configuration.source, scan_configuration)
+
+        if not os.path.isdir(scan_configuration.source) or not os.listdir(scan_configuration.source):
+            exit_with_error(f"Packaging failed - no files generated at {scan_configuration.source}", -1, scan_configuration)
 
         if scan_configuration.pipeline_scan:
             start_pipeline_scan(scan_configuration)

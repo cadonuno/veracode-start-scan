@@ -2,7 +2,7 @@ from veracode_api_py.identity import BusinessUnits, Teams
 from veracode_api_py.collections import Collections
 from veracode_api_py.applications import Applications
 from veracode_api_py.policy import Policies
-from veracode_api_py.sca import Workspaces, SCAApplications
+from veracode_api_py.sca import Workspaces, SCAApplications, SBOM
 from veracode_api_py.policy import Policies
 from ErrorHandler import exit_with_error
 import pandas as pd
@@ -191,14 +191,20 @@ def inner_expire_srcclr_token(scan_configuration):
 def link_sca_project(sca_results_message, scan_configuration):
     return try_to_run_and_return({"scan_id": sca_results_message, "scan_configuration": scan_configuration}, inner_link_sca_project, scan_configuration)
 
-def inner_link_sca_project(linking_information):
-    scan_id = linking_information["scan_id"]
-    scan_configuration = linking_information["scan_configuration"]
-    workspace_id = scan_configuration.workspace_guid
-    scan = Workspaces().get_scan(scan_id)
-    project_id = get_project_id_for_scan_date(workspace_id, scan["date"])
+def inner_link_sca_project(linking_information, scan_configuration):
+    project_id = inner_get_scan_project_guid(linking_information)
     if project_id:
         SCAApplications().link_project(scan_configuration.application_guid, project_id)
+
+def get_scan_project_guid(sca_results_message, scan_configuration):
+    return try_to_run_and_return({"scan_id": sca_results_message, "scan_configuration": scan_configuration}, inner_get_scan_project_guid, scan_configuration)
+
+def inner_get_scan_project_guid(project_information):
+    scan_id = project_information["scan_id"]
+    scan_configuration = project_information["scan_configuration"]
+    workspace_id = scan_configuration.workspace_guid
+    scan = Workspaces().get_scan(scan_id)
+    return get_project_id_for_scan_date(workspace_id, scan["date"])
 
 def get_project_id_for_scan_date(workspace_id, scan_date):
     projects = Workspaces().get_projects(workspace_id)
@@ -212,3 +218,15 @@ def are_equal_datetimes(first_datetime, second_datetime):
     first_datetime = pd.to_datetime(first_datetime)
     second_datetime = pd.to_datetime(second_datetime)
     return first_datetime == second_datetime
+
+def get_upload_sbom(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_get_upload_sbom, scan_configuration)
+
+def inner_get_upload_sbom(scan_configuration):
+    return SBOM().get(scan_configuration.application_guid, scan_configuration.sbom_type)
+
+def get_agent_sbom(scan_configuration):
+    return try_to_run_and_return(scan_configuration, inner_get_agent_sbom, scan_configuration)
+
+def inner_get_agent_sbom(scan_configuration):
+    return SBOM().get_for_project(scan_configuration.project_guid, scan_configuration.sbom_type)

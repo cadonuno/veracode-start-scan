@@ -3,11 +3,11 @@ import threading
 
 from pathlib import Path
 from ScanConfiguration import ScanConfiguration
-from VeracodeCli import call_subprocess
+from CliCaller import call_subprocess, get_absolute_file_path, save_sbom_file
 from ScanConfiguration import ScanConfiguration
 from VeracodeCli import get_policy_file_name
 from ErrorHandler import exit_with_error, try_generate_error_message
-from VeracodeApi import expire_srcclr_token, link_sca_project
+from VeracodeApi import expire_srcclr_token, link_sca_project, get_agent_sbom, get_scan_project_guid
 
 
 def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, policy_file_name, results_json, results_txt):
@@ -50,7 +50,9 @@ def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_valu
 def run_agent_sca(returned_values, results_file, scan_configuration):
     sca_results = run_agent_sca_inner(results_file, scan_configuration)
     if scan_configuration.link_project and sca_results[2]:
-        link_sca_project(sca_results[2], scan_configuration)
+        scan_configuration.project_guid = link_sca_project(sca_results[2], scan_configuration)
+    elif sca_results[2]:
+        scan_configuration.project_guid = get_scan_project_guid(sca_results[2], scan_configuration)
     returned_values["SCA Scan"] = sca_results
 
 def start_pipeline_scan(scan_configuration: ScanConfiguration):
@@ -72,6 +74,9 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
     finally:
         expire_srcclr_token(scan_configuration)
 
+    if scan_configuration.sbom_type:
+        save_sbom_file(get_agent_sbom(scan_configuration), scan_configuration)
+
     total_return_code = 0
     errors = []
     for target, returned_value in returned_values.items():
@@ -81,6 +86,3 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
         exit_with_error(errors, return_value=total_return_code, scanConfiguration=scan_configuration)
     else:
         print(errors)
-
-def get_absolute_file_path(base_directory, file_name):
-    return os.path.join(base_directory, file_name)
