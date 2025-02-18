@@ -63,6 +63,7 @@ Scan Parameters:
 - `-sn`, `--sandbox_name` - (optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.
 - `-v`, `--version` - Name of the scan/version - has to be unique for each application/sandbox combo and does NOT support pipeline scans - mandatory if not using -ps/--pipeline_scan.
 - `-del`, `--delete_incomplete_scan` - (optional) Sets a value for the -deleteincompletescan parameter for the upload and scan action (not supported, or needed, for the pipeline scan).
+- `-wt`, `--wait_for_timeout` - (optional) Sets a timeout (in minutes) to wait for the previous scan to complete before trying to start a new scan (not supported or needed for the pipeline scan, or if using --delete_incomplete_scan).
 - `-sct`, `--scan_timeout` - (optional) Scan timeout (in minutes). If empty or 0, will not wait for Sandbox/Policy scans to complete.
 - `-f`, `--fail_build` - (optional) Set to fail the build if application fails policy evaluation.
 - `-o`, `--override_failure` - (optional) Set to return a 0 on error. This can be used to avoid breaking a pipeline.

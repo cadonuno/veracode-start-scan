@@ -78,6 +78,7 @@ class ScanConfiguration:
     base_cli_directory : str = None
     link_project : bool = False
     verbose : bool = False
+    wait_for_timeout : int = 0
     delete_incomplete_scan : int = 0
 
     proxy_url : str = None
@@ -157,7 +158,14 @@ class ScanConfiguration:
             errors.append(f"ERROR: either '-a/--application' (Application Name) or '-ai/--application_guid' (Application GUID) are required to run a scan")
 
         errors = self.validate_field(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Delete Incomplete Scan must be one of these values: 0, 1, 2", lambda delete_incomplete_scan: not delete_incomplete_scan in ALLOWED_DELETE_INCOMPLETE_SCAN)
-            
+        if self.pipeline_scan and self.delete_incomplete_scan:
+            self.append_error(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Pipeline scans do not support (or require) --delete_incomplete_scan")
+        if self.wait_for_timeout:
+            if self.pipeline_scan:
+                self.append_error(errors, self.wait_for_timeout, "-wt/--wait_for_timeout", "Pipeline scans do not support (or require) --wait_for_timeout")
+            if self.delete_incomplete_scan:
+                self.append_error(errors, self.wait_for_timeout, "-wt/--wait_for_timeout", "--delete_incomplete_scan and --wait_for_timeout are mutually exclusive")
+
         if application:
             self.application_guid = application["guid"]
             self.application_legacy_id = str(application["id"])
@@ -246,6 +254,8 @@ class ScanConfiguration:
             exit_with_error(errors, len(errors)*-1, self)
         if self.proxy_url:
             self.set_proxy_environment(self.proxy_url, self.proxy_port, self.proxy_username, self.proxy_password)
+        if self.wait_for_timeout:
+            self.wait_for_timeout = int(self.wait_for_timeout)
 
     def parse_custom_field_list(self, custom_field_list):
         return list(map(lambda custom_field: CustomField(custom_field), custom_field_list)) if custom_field_list else []
@@ -409,6 +419,12 @@ class ScanConfiguration:
             required=False
         )
         parser.add_argument(
+            "-wt",
+            "--wait_for_timeout",
+            help="(optional) Sets a timeout (in minutes) to wait for the previous scan to complete before trying to start a new scan (not supported or needed for the pipeline scan, or if using --delete_incomplete_scan).",
+            required=False
+        )
+        parser.add_argument(
             "-vid",
             "--veracode_api_key_id",
             help="Veracode API key ID to use - a non-human/API account is recommended.",
@@ -529,6 +545,7 @@ class ScanConfiguration:
         self.link_project = args.link_project
         self.verbose = args.debug
         self.delete_incomplete_scan = args.delete_incomplete_scan
+        self.wait_for_timeout = args.wait_for_timeout
         self.proxy_url = args.proxy_url
         self.proxy_port = args.proxy_port
         self.proxy_username = args.proxy_username
