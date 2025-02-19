@@ -69,4 +69,4 @@ def start_platform_scan(scan_configuration: ScanConfiguration):
         scan_command.append("-appid")
         scan_command.append(scan_configuration.application_legacy_id)
 
-    run_scan(scan_configuration, scan_command, timedelta(minutes=scan_configuration.wait_for_timeout))
+    run_scan(scan_configuration, scan_command, timedelta(minutes=scan_configuration.wait_for_timeout) if scan_configuration.wait_for_timeout else timedelta(minutes=0))
