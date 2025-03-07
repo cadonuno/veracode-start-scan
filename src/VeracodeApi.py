@@ -7,6 +7,14 @@ from veracode_api_py.policy import Policies
 from ErrorHandler import exit_with_error
 import pandas as pd
 
+def parse_custom_field_list(original_list, new_list):
+    new_list = list(map(lambda custom_field: parse_custom_field(custom_field), new_list))
+    all_names = list(map(lambda custom_field: custom_field["name"], new_list))
+    for field in original_list:
+        if not field["name"] in all_names:
+            new_list.append(field)
+    return new_list
+
 def parse_custom_field(custom_field):
     return {
         "name": custom_field.name,
@@ -118,9 +126,9 @@ def create_application(scan_configuration):
 
 def inner_create_application(scan_configuration):
     application = Applications().create(app_name=scan_configuration.application, business_criticality=scan_configuration.business_criticality, 
-                                        description=scan_configuration.description, git_repo_url=scan_configuration.git_repo_url,
+                                        description=scan_configuration.description, tags=scan_configuration.application_tags, git_repo_url=scan_configuration.git_repo_url,
                                         business_unit=scan_configuration.business_unit_guid, teams=list(map(lambda team: team.guid, scan_configuration.team_list)),
-                                        custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.application_custom_fields)), 
+                                        custom_fields=parse_custom_field_list([], scan_configuration.application_custom_fields), 
                                         bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email,
                                         custom_kms_alias=scan_configuration.key_alias)
     return application
@@ -129,10 +137,13 @@ def update_application(scan_configuration):
     return try_to_run_and_return(scan_configuration, inner_update_application, scan_configuration)
 
 def inner_update_application(scan_configuration):
+    original_application = Applications().get(guid=scan_configuration.application_guid)
+    custom_fields=list(map(lambda custom_field: custom_field, original_application["profile"]["custom_fields"])) if original_application["profile"]["custom_fields"] else []
+    custom_fields=parse_custom_field_list(custom_fields, scan_configuration.application_custom_fields)
     application = Applications().update(guid=scan_configuration.application_guid, app_name=scan_configuration.application,business_criticality=scan_configuration.business_criticality, 
-                                        description=scan_configuration.description, git_repo_url=scan_configuration.git_repo_url,
+                                        description=scan_configuration.description, tags=scan_configuration.application_tags, git_repo_url=scan_configuration.git_repo_url,
                                         business_unit=scan_configuration.business_unit_guid, teams=list(map(lambda team: team.guid, scan_configuration.team_list)),
-                                        custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.application_custom_fields)), 
+                                        custom_fields=custom_fields, 
                                         bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email)
     return application["guid"]
 
@@ -142,8 +153,8 @@ def create_collection(scan_configuration):
 def inner_create_collection(scan_configuration):
     collection = Collections().create(name=scan_configuration.collection, description=scan_configuration.collection_description,
                                     business_unit_guid=scan_configuration.business_unit_guid, 
-                                    custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.collection_custom_fields)),
-                                    assets=[scan_configuration.application_guid])
+                                    custom_fields=parse_custom_field_list([], scan_configuration.collection_custom_fields),
+                                    assets=[scan_configuration.application_guid], tags=scan_configuration.collection_tags)
     return collection["guid"]
 
 def update_collection(scan_configuration):
@@ -154,9 +165,12 @@ def inner_update_collection(scan_configuration):
     assets=list(map(lambda asset: asset["guid"], original_collection["asset_infos"]))
     if not scan_configuration.application_guid in assets:
         assets.append(scan_configuration.application_guid)
+    custom_fields=list(map(lambda custom_field: custom_field, original_collection["custom_fields"])) if original_collection["custom_fields"] else []
+    custom_fields=parse_custom_field_list(custom_fields, scan_configuration.collection_custom_fields)
     collection = Collections().update(guid=scan_configuration.collection_guid, name=scan_configuration.collection, description=scan_configuration.collection_description,
                                     business_unit_guid=scan_configuration.business_unit_guid, 
-                                    custom_fields=list(map(lambda custom_field: parse_custom_field(custom_field), scan_configuration.collection_custom_fields)), assets=assets)
+                                    custom_fields=custom_fields, 
+                                    assets=assets, tags=scan_configuration.collection_tags)
     return collection["guid"]
 
 def create_workspace(scan_configuration):

@@ -21,6 +21,9 @@ def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, p
                                             "--project-name", scan_configuration.application]
     if scan_configuration.verbose:
         commands.append("--verbose")
+    if scan_configuration.include:
+        commands.append("--include")
+        commands.append(scan_configuration.include)
     returned_values[scan_target] = call_subprocess(process_id=f"Scanning {scan_target}", scan_configuration=scan_configuration, fail_on_error=False, commands=commands)
 
 def run_agent_sca_inner(results_file, scan_configuration):

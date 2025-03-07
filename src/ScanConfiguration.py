@@ -36,6 +36,7 @@ class CustomField:
 class ScanConfiguration:
     application : str = None
     description : str = None
+    application_tags : str = None
     business_criticality : str = None
     team_list : list[Team] = []
     application_custom_fields : list[CustomField] = []
@@ -43,6 +44,7 @@ class ScanConfiguration:
 
     collection : str = None
     collection_description : str = None
+    collection_tags : str = None
     collection_custom_fields : list[CustomField] = []
 
     business_unit : str = None
@@ -61,6 +63,7 @@ class ScanConfiguration:
     scan_timeout : int = 0
     veracode_cli_location : str = None
     veracode_wrapper_location : str = None
+    include : str = None
 
     application_guid : str = None
     application_legacy_id : str = None
@@ -174,6 +177,7 @@ class ScanConfiguration:
             show_warning("Application already exists, key alias will be IGNORED")
 
         errors = self.validate_field_size(errors, self.description, "-desc/--description", "Description", 4000)   
+        errors = self.validate_field_size(errors, self.application_tags, "-at/--application_tags", "Application Tags", 512)
 
         self.business_criticality = self.business_criticality.strip().upper()
         errors = self.validate_field(errors, self.business_criticality, "-bc/--business_criticality", "Business Criticality must be one of these values: Very High, High, Medium, Low, Very Low", lambda business_criticality: not business_criticality in ALLOWED_CRITICALITIES)
@@ -186,11 +190,12 @@ class ScanConfiguration:
         if self.collection:
             self.collection_guid = get_collection_id(self.collection, self)
         errors = self.validate_field_size(errors, self.collection_description, "-cd/--collection_description", "Collection Description", 4000)
+        errors = self.validate_field_size(errors, self.collection_tags, "-ct/--collection_tags", "Collection Tags", 512)
         errors = self.validate_list(errors, self.collection_custom_fields, "-cc/--collection_custom_field", lambda custom_field: custom_field.error, lambda custom_field: custom_field.value, lambda custom_field: custom_field.error)
         if not self.collection:
             errors = self.validate_field(errors, self.collection_description, "-cd/--collection_description", "Collection Description requires a collection", lambda collection_description: bool(collection_description))
+            errors = self.validate_field(errors, self.collection_tags, "-ct/--collection_tags", "Collection Tags require a collection", lambda collection_tags: bool(collection_tags))
             errors = self.validate_field(errors, self.collection_custom_fields, "-cc/--collection_custom_field", "Collection Custom Field requires a collection", lambda collection_custom_fields: bool(collection_custom_fields))
-
 
         if self.business_unit:
             self.business_unit_guid = get_business_unit_id(self.business_unit, self)
@@ -288,6 +293,12 @@ class ScanConfiguration:
             required=False
         )
         parser.add_argument(
+            "-at",
+            "--application_tags",
+            help="(optional) Tags to be added to the application - if the application already exists, it WILL be updated",
+            required=False
+        )
+        parser.add_argument(
             "-bc",
             "--business_criticality",
             help="Business criticality of the application - if the application already exists, it WILL be updated.",
@@ -324,6 +335,12 @@ class ScanConfiguration:
             "-cd",
             "--collection_description",
             help="(optional) Description of the collection - if the collection already exists, it WILL be updated.",
+            required=False
+        )
+        parser.add_argument(
+            "-ct",
+            "--collection_tags",
+            help="(optional) Tags to be added to the collection - if the collection already exists, it WILL be updated",
             required=False
         )
         parser.add_argument(
@@ -493,6 +510,12 @@ class ScanConfiguration:
             help="Location of the Veracode API Wrapper jar.",
             required=True
         )
+        parser.add_argument(
+            "-i",
+            "--include",
+            help="(optional) Case-sensitive, comma-separated list of module name patterns that represent the names of modules to scan as top-level modules. The * wildcard matches 0 or more characters. The ? wildcard matches exactly one character.",
+            required=False
+        )
 
         parser.add_argument(
             "-ia",
@@ -516,11 +539,13 @@ class ScanConfiguration:
         self.application = args.application
         self.application_guid = args.application_guid
         self.description = args.description
+        self.application_tags = args.application_tags
         self.business_criticality = args.business_criticality
         self.team_list = self.parse_team_list(args.team)
         self.application_custom_fields = self.parse_custom_field_list(args.application_custom_field)
         self.collection = args.collection
         self.collection_description = args.collection_description
+        self.collection_tags = args.collection_tags
         self.collection_custom_fields = self.parse_custom_field_list(args.collection_custom_field)
         self.business_unit = args.business_unit
         self.business_owner = args.business_owner
@@ -539,6 +564,7 @@ class ScanConfiguration:
         self.scan_timeout = args.scan_timeout
         self.veracode_cli_location = args.veracode_cli_location
         self.veracode_wrapper_location = args.veracode_wrapper_location
+        self.include = args.include
         self.git_repo_url = args.git_repo_url
         self.ignore_artifacts = args.ignore_artifact
         self.key_alias = args.key_alias

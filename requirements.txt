@@ -1,3 +1,3 @@
-veracode-api-py>=0.9.59
+veracode-api-py>=0.9.60
 colored>=2.2.4
 pandas>=2.2.3
