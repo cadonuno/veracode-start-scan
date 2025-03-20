@@ -144,7 +144,8 @@ def inner_update_application(scan_configuration):
                                         description=scan_configuration.description, tags=scan_configuration.application_tags, git_repo_url=scan_configuration.git_repo_url,
                                         business_unit=scan_configuration.business_unit_guid, teams=list(map(lambda team: team.guid, scan_configuration.team_list)),
                                         custom_fields=custom_fields, 
-                                        bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email)
+                                        bus_owner_name=scan_configuration.business_owner, bus_owner_email=scan_configuration.business_owner_email,
+                                        custom_kms_alias=scan_configuration.key_alias)
     return application["guid"]
 
 def create_collection(scan_configuration):

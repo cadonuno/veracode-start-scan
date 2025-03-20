@@ -2,8 +2,8 @@ from ScanConfiguration import ScanConfiguration
 from VeracodeApi import create_business_unit, create_team, create_application, create_collection, update_collection, update_application, create_workspace, create_sca_token, get_application_policy_name, add_teams_to_workspace
 
 def pre_scan_actions(scan_configuration: ScanConfiguration):
-    new_team_list = []
     if scan_configuration.team_list:
+        new_team_list = []
         for team in scan_configuration.team_list:
             new_team = team
             if not team.guid:
@@ -19,7 +19,7 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
         application = create_application(scan_configuration)
         scan_configuration.application_guid = application["guid"]
         scan_configuration.application_legacy_id = str(application["id"])
-    else:
+    elif not scan_configuration.skip_application_update:
         update_application(scan_configuration)
 
     if scan_configuration.pipeline_scan:
@@ -28,7 +28,7 @@ def pre_scan_actions(scan_configuration: ScanConfiguration):
     if scan_configuration.collection:
         if not scan_configuration.collection_guid:
             scan_configuration.collection_guid = create_collection(scan_configuration)
-        else:
+        elif not scan_configuration.skip_collection_update:
             update_collection(scan_configuration)
 
     if scan_configuration.workspace_name:
