@@ -64,7 +64,8 @@ Both Application and Collection:
 Scan Parameters:
 - `-st`, `--scan_type` - Type of scan, either 'folder' or 'artifact'.
 - `-s`, `--source` - Source for the scan. For 'folder', will call the Veracode packager on it, otherwise, will send it directly to the scanner.
-- `-cod`, `--clear_output_directory` - (optional) Pass this flag to clear the build output directory before calling a build. Only available for --scan_type 'folder'.
+- `-cbs`, `--cleanup_before_start` - (optional) Pass this flag to clear the build output directory before calling a build. Only available for --scan_type 'folder'.
+- `-cbe`, `--cleanup_before_exit` - (optional) Pass this flag to delete the scanned files on exit - does nothing for --scan_type 'artifact'.
 - `-ps`, `--pipeline_scan` - (optional) Pass this flag to run a pipeline scan. If set, will fetch the policy assigned to the application profile (if one exists) before proceeding - does NOT support a Sandbox name.
 - `-wn`, `--workspace_name` - (optional) Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run alongside the Pipeline Scan.
 - `-sbom`, `--sbom_type` - (optional) Set the type of SBOM to fetch for the project after the scan - if using Policy/Sandbox scan, requires a scan_timeout.

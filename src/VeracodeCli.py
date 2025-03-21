@@ -20,7 +20,7 @@ def clear_directory(directory, scan_configuration):
 
 def package_application(scan_source: str, scan_configuration: ScanConfiguration) -> str:
     artifacts_directory = os.path.join(scan_configuration.base_cli_directory, PACKAGER_OUTPUT, scan_configuration.application)
-    if scan_configuration.clear_output_directory:
+    if scan_configuration.cleanup_before_start:
         clear_directory(artifacts_directory, scan_configuration)
 
     package_commands = [scan_configuration.veracode_cli_location, "package", "--source", scan_source, "--output", artifacts_directory, "--trust"]

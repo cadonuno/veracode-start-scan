@@ -95,7 +95,9 @@ class ScanConfiguration:
     skip_collection_update : bool = False
     require_teams : bool = False
     require_business_unit : bool = False
-    clear_output_directory : bool = False
+    cleanup_before_start : bool = False
+    cleanup_before_exit : bool = False
+    has_generated_files : bool = False
 
     def hide_value(self, value):
         return "*" * len(value)
@@ -227,8 +229,8 @@ class ScanConfiguration:
             errors = self.validate_field(errors, self.ignore_artifacts, "-ia/--ignore_artifact", "Ignore Artifact is only available for --scan_type 'folder'", lambda collection_description: bool(collection_description))
 
         errors = self.validate_field(errors, self.source, "-s/--source", f"File not found {self.source}", lambda source: not os.path.exists(source))
-        if self.clear_output_directory and self.scan_type and self.scan_type == "artifact":
-            errors = self.append_error(errors, self.clear_output_directory, "-cod/--clear_output_directory", "Clearing the build output directory is only available for --scan_type 'folder'")
+        if self.cleanup_before_start and self.scan_type and self.scan_type == "artifact":
+            errors = self.append_error(errors, self.cleanup_before_start, "-cbs/--cleanup_before_start", "Clearing the build output directory before running a build is only available for --scan_type 'folder'")
 
         if self.pipeline_scan and self.sandbox_name:
             errors = self.append_error(errors, self.sandbox_name, "-sn/--sandbox_name", "Pipeline scan does not support a sandbox name")            
@@ -454,8 +456,8 @@ class ScanConfiguration:
             required=True
         )
         parser.add_argument(
-            "-cod",
-            "--clear_output_directory",
+            "-cbs",
+            "--cleanup_before_start",
             help="(optional) Pass this flag to clear the build output directory before calling a build. Only available for --scan_type 'folder'.",
             required=False,
             action=argparse.BooleanOptionalAction
@@ -594,6 +596,13 @@ class ScanConfiguration:
             required=False
         )
         parser.add_argument(
+            "-cbe",
+            "--cleanup_before_exit",
+            help="(optional) Pass this flag to delete the scanned files on exit - does nothing for --scan_type 'artifact'.",
+            required=False,
+            action=argparse.BooleanOptionalAction
+        )
+        parser.add_argument(
             "-d",
             "--debug",
             help="(optional) Pass this flag to output verbose logging.",
@@ -651,6 +660,7 @@ class ScanConfiguration:
         self.skip_collection_update = args.skip_collection_update
         self.require_business_unit = args.require_business_unit
         self.require_teams = args.require_teams
-        self.clear_output_directory = args.clear_output_directory
+        self.cleanup_before_start = args.cleanup_before_start
+        self.cleanup_before_exit = args.cleanup_before_exit
 
         self.validate_input()

@@ -86,6 +86,6 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
         total_return_code += abs(returned_value[0])
         errors=try_generate_error_message(return_code=returned_value[0], error_message=returned_value[1], target=target)
     if scan_configuration.fail_build and total_return_code != 0:
-        exit_with_error(errors, return_value=total_return_code, scanConfiguration=scan_configuration)
+        exit_with_error(errors, return_value=total_return_code, scan_configuration=scan_configuration)
     else:
         print(errors)

@@ -36,7 +36,7 @@ def run_scan(scan_configuration, scan_command, timeout, start_time=None):
         save_sbom_file(get_upload_sbom(scan_configuration), scan_configuration)
 
     if scan_configuration.fail_build and return_code != 0:
-        exit_with_error(errors, return_value=return_code, scanConfiguration=scan_configuration)
+        exit_with_error(errors, return_value=return_code, scan_configuration=scan_configuration)
     else:
         print(errors)
 

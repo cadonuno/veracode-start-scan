@@ -7,13 +7,14 @@ WARNING_MESSAGE_COLOUR=Fore.rgb(255, 127, 39)
 
 ERROR_PREFIX_COLOUR = Fore.rgb('136', '0', '21')
 
-def exit_with_error(message: any, return_value: int, scanConfiguration):
+
+def exit_with_error(message: any, return_value: int, scan_configuration):
     if isinstance(message, Iterable) and not isinstance(message, str):
         for line in message:
             print(line.replace("\n", ""))
     else:
         print(message)
-    sys.exit(0 if scanConfiguration.override_failure else return_value)
+    sys.exit(0 if scan_configuration.override_failure else return_value)
 
 def show_warning(message):
     print(f"{WARNING_COLOUR}WARNING: {Style.reset}{WARNING_MESSAGE_COLOUR}{message}{Style.reset}")
