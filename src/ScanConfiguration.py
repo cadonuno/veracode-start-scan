@@ -64,6 +64,8 @@ class ScanConfiguration:
     veracode_cli_location : str = None
     veracode_wrapper_location : str = None
     include : str = None
+    exclude : str = None
+    scan_all_non_fatal_top_level_modules : bool = False
 
     application_guid : str = None
     application_legacy_id : str = None
@@ -171,8 +173,13 @@ class ScanConfiguration:
             errors.append(f"ERROR: either '-a/--application' (Application Name) or '-ai/--application_guid' (Application GUID) are required to run a scan")
 
         errors = self.validate_field(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Delete Incomplete Scan must be one of these values: 0, 1, 2", lambda delete_incomplete_scan: not delete_incomplete_scan in ALLOWED_DELETE_INCOMPLETE_SCAN)
-        if self.pipeline_scan and self.delete_incomplete_scan:
-            self.append_error(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Pipeline scans do not support (or require) --delete_incomplete_scan")
+        if self.pipeline_scan:
+            if self.delete_incomplete_scan:
+                self.append_error(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Pipeline scans do not support (or require) --delete_incomplete_scan")
+            if self.exclude:
+                self.append_error(errors, self.wait_for_timeout, "-e/--wait_for_timeout", "Pipeline scans do not support --exclude")
+            if self.scan_all_non_fatal_top_level_modules:
+                self.append_error(errors, self.wait_for_timeout, "-sanftlm/--scan_all_non_fatal_top_level_modules", "Pipeline scans do not support --exscan_all_non_fatal_top_level_modulesclude")
         if self.wait_for_timeout:
             if self.pipeline_scan:
                 self.append_error(errors, self.wait_for_timeout, "-wt/--wait_for_timeout", "Pipeline scans do not support (or require) --wait_for_timeout")
@@ -229,8 +236,11 @@ class ScanConfiguration:
             errors = self.validate_field(errors, self.ignore_artifacts, "-ia/--ignore_artifact", "Ignore Artifact is only available for --scan_type 'folder'", lambda collection_description: bool(collection_description))
 
         errors = self.validate_field(errors, self.source, "-s/--source", f"File not found {self.source}", lambda source: not os.path.exists(source))
-        if self.cleanup_before_start and self.scan_type and self.scan_type == "artifact":
-            errors = self.append_error(errors, self.cleanup_before_start, "-cbs/--cleanup_before_start", "Clearing the build output directory before running a build is only available for --scan_type 'folder'")
+        if self.scan_type and self.scan_type == "artifact":
+            if self.cleanup_before_start:
+                errors = self.append_error(errors, self.cleanup_before_start, "-cbs/--cleanup_before_start", "Clearing the build output directory before running a build is only available for --scan_type 'folder'")
+            if self.cleanup_before_exit:
+                errors = self.append_error(errors, self.cleanup_before_exit, "-cbe/--cleanup_before_exit", "Clearing the build output directory after running a scan is only available for --scan_type 'folder'")
 
         if self.pipeline_scan and self.sandbox_name:
             errors = self.append_error(errors, self.sandbox_name, "-sn/--sandbox_name", "Pipeline scan does not support a sandbox name")            
@@ -587,6 +597,19 @@ class ScanConfiguration:
             help="(optional) Case-sensitive, comma-separated list of module name patterns that represent the names of modules to scan as top-level modules. The * wildcard matches 0 or more characters. The ? wildcard matches exactly one character.",
             required=False
         )
+        parser.add_argument(
+            "-e",
+            "--exclude",
+            help="(optional) Case-sensitive, comma-separated list of module name patterns that represent the names of modules NOT to scan as top-level modules. The * wildcard matches 0 or more characters. The ? wildcard matches exactly one character.",
+            required=False
+        )
+        parser.add_argument(
+            "-sanftlm",
+            "--scan_all_non_fatal_top_level_modules",
+            help="(optional) Pass this flag to continue scanning even if there are fatal errors in some (but not all) modules.",
+            required=False,
+            action=argparse.BooleanOptionalAction
+        )
 
         parser.add_argument(
             "-ia",
@@ -643,6 +666,8 @@ class ScanConfiguration:
         self.veracode_cli_location = args.veracode_cli_location
         self.veracode_wrapper_location = args.veracode_wrapper_location
         self.include = args.include
+        self.exclude = args.exclude
+        self.scan_all_non_fatal_top_level_modules = args.scan_all_non_fatal_top_level_modules
         self.git_repo_url = args.git_repo_url
         self.ignore_artifacts = args.ignore_artifact
         self.key_alias = args.key_alias

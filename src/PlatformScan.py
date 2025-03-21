@@ -54,15 +54,22 @@ def start_platform_scan(scan_configuration: ScanConfiguration):
     if scan_configuration.verbose:
         scan_command.append("-debug")
 
-    if scan_configuration.delete_incomplete_scan:
+    if scan_configuration.delete_incomplete_scan or scan_configuration.exclude or scan_configuration.scan_all_non_fatal_top_level_modules:
         scan_command.append("-action")
         scan_command.append("uploadandscan")
         scan_command.append("-appname")
         scan_command.append(scan_configuration.application)
-        scan_command.append("-deleteincompletescan")
-        scan_command.append(scan_configuration.delete_incomplete_scan)
         scan_command.append("-createprofile")
         scan_command.append("false")
+        if scan_configuration.delete_incomplete_scan:   
+            scan_command.append("-deleteincompletescan")
+            scan_command.append(scan_configuration.delete_incomplete_scan)
+        if scan_configuration.exclude:
+            scan_command.append("-exclude")
+            scan_command.append(scan_configuration.exclude)
+        if scan_configuration.scan_all_non_fatal_top_level_modules:
+            scan_command.append("-scanallnonfataltoplevelmodules")
+            scan_command.append("true")
     else:
         scan_command.append("-action")
         scan_command.append("uploadandscanbyappid")
