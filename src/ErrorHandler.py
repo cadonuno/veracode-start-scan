@@ -1,12 +1,6 @@
 import sys
 from collections.abc import Iterable
-from colored import Fore, Style
-
-WARNING_COLOUR=Fore.rgb(212, 105, 32)
-WARNING_MESSAGE_COLOUR=Fore.rgb(255, 127, 39)
-
-ERROR_PREFIX_COLOUR = Fore.rgb('136', '0', '21')
-
+from ColourHandler import RESET_STYLE, WARNING_MESSAGE_COLOUR, ERROR_PREFIX_COLOUR, INFO_PREFIX_COLOUR
 
 def exit_with_error(message: any, return_value: int, scan_configuration):
     if isinstance(message, Iterable) and not isinstance(message, str):
@@ -17,9 +11,11 @@ def exit_with_error(message: any, return_value: int, scan_configuration):
     sys.exit(0 if scan_configuration.override_failure else return_value)
 
 def show_warning(message):
-    print(f"{WARNING_COLOUR}WARNING: {Style.reset}{WARNING_MESSAGE_COLOUR}{message}{Style.reset}")
+    print(f"{WARNING_MESSAGE_COLOUR}WARNING: {RESET_STYLE}{WARNING_MESSAGE_COLOUR}{message}{RESET_STYLE}")
 
-def try_generate_error_message(return_code, error_message, target, errors=[]):
+def try_generate_error_message(return_code, message, target, messages=[]):
     if return_code != 0:        
-        errors.append(f"{ERROR_PREFIX_COLOUR}Failed scan for {target}:{Style.reset} {error_message}.")
-    return errors
+        messages.append(f"{ERROR_PREFIX_COLOUR}Failed scan for {target}:{RESET_STYLE} {message}.")
+    else:
+        messages.append(f"{INFO_PREFIX_COLOUR}Successfull scan for {target}:{RESET_STYLE} {message}.")
+    return messages

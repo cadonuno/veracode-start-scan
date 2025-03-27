@@ -67,7 +67,7 @@ Scan Parameters:
 - `-cbs`, `--cleanup_before_start` - (optional) Pass this flag to clear the build output directory before calling a build. Only available for --scan_type 'folder'.
 - `-cbe`, `--cleanup_before_exit` - (optional) Pass this flag to delete the scanned files on exit - does nothing for --scan_type 'artifact'.
 - `-ps`, `--pipeline_scan` - (optional) Pass this flag to run a pipeline scan. If set, will fetch the policy assigned to the application profile (if one exists) before proceeding - does NOT support a Sandbox name.
-- `-wn`, `--workspace_name` - (optional) Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run alongside the Pipeline Scan.
+- `-wn`, `--workspace_name` - (optional) Name of the workspace to use for Agent-based SCA scans - If empty and using the Pipeline Scanner, SCA results will not be generated.
 - `-sbom`, `--sbom_type` - (optional) Set the type of SBOM to fetch for the project after the scan - if using Policy/Sandbox scan, requires a scan_timeout.
 - `-lp`, `--link_project` - (optional) Pass this flag to link the agent SCA project to the Application profile (requires a workspace name).
 - `-sn`, `--sandbox_name` - (optional) Name of the sandbox to use for the scan, leave empty to run a Policy Scan.

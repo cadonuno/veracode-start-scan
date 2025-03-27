@@ -7,6 +7,7 @@ from Constants import ALLOWED_CRITICALITIES, ALLOWED_DELETE_INCOMPLETE_SCAN, SBO
 from VeracodeApi import get_application, get_application_by_guid, get_collection_id, get_business_unit_id, get_team_ids, get_workspace_id
 from veracode_api_py.apihelper import get_region_for_api_credential
 from ErrorHandler import exit_with_error
+from ColourHandler import ERROR_PREFIX_COLOUR, RESET_STYLE, INFO_PREFIX_COLOUR, WARNING_MESSAGE_COLOUR
 
 class Team:
     name: str
@@ -105,7 +106,7 @@ class ScanConfiguration:
         return "*" * len(value)
 
     def append_error(self, errors, field_value, field_name, error_message, mask_value=False):
-        errors.append(f"ERROR: '{(self.hide_value(field_value) if mask_value else field_value)}' is not a valid value for the '{field_name}' parameter - {error_message}")
+        errors.append(f"{ERROR_PREFIX_COLOUR}INPUT ERROR:{RESET_STYLE} '{(self.hide_value(field_value) if mask_value else field_value)}' is not a valid value for the {WARNING_MESSAGE_COLOUR}'{field_name}'{RESET_STYLE} parameter - {INFO_PREFIX_COLOUR}{error_message}{RESET_STYLE}")
         return errors
 
     def validate_field(self, errors, field_value, field_name, error_message, check_function, mask_value=False):
@@ -177,7 +178,7 @@ class ScanConfiguration:
             if self.delete_incomplete_scan:
                 self.append_error(errors, self.delete_incomplete_scan, "-del/--delete_incomplete_scan", "Pipeline scans do not support (or require) --delete_incomplete_scan")
             if self.exclude:
-                self.append_error(errors, self.wait_for_timeout, "-e/--wait_for_timeout", "Pipeline scans do not support --exclude")
+                self.append_error(errors, self.wait_for_timeout, "-e/--exclude", "Pipeline scans do not support --exclude")
             if self.scan_all_non_fatal_top_level_modules:
                 self.append_error(errors, self.wait_for_timeout, "-sanftlm/--scan_all_non_fatal_top_level_modules", "Pipeline scans do not support --exscan_all_non_fatal_top_level_modulesclude")
         if self.wait_for_timeout:
@@ -185,6 +186,9 @@ class ScanConfiguration:
                 self.append_error(errors, self.wait_for_timeout, "-wt/--wait_for_timeout", "Pipeline scans do not support (or require) --wait_for_timeout")
             if self.delete_incomplete_scan:
                 self.append_error(errors, self.wait_for_timeout, "-wt/--wait_for_timeout", "--delete_incomplete_scan and --wait_for_timeout are mutually exclusive")
+
+        if self.scan_all_non_fatal_top_level_modules and self.exclude:
+            self.append_error(errors, self.scan_all_non_fatal_top_level_modules, "-sanftlm/--scan_all_non_fatal_top_level_modules", "-e/--exclude and -sanftlm/--scan_all_non_fatal_top_level_modules are mutually exclusive")
 
         if application:
             self.application_guid = application["guid"]
@@ -249,8 +253,6 @@ class ScanConfiguration:
 
         if self.pipeline_scan and self.version:
             errors = self.append_error(errors, self.version, "-v/--version", "Pipeline scan does not support a scan name")
-        if not self.pipeline_scan and self.workspace_name:
-            errors = self.append_error(errors, self.workspace_name, "-wn/--workspace_name", "Agent-based SCA is only supported when running pipeline scans. *Requires the SCA Agent to be installed")
         if not self.pipeline_scan and not self.version:
             errors = self.append_error(errors, self.version, "-v/--version", "Scan name is required for Policy and Sandbox scans")
 
@@ -482,7 +484,7 @@ class ScanConfiguration:
         parser.add_argument(
             "-wn",
             "--workspace_name",
-            help="(optional) Name of the workspace to use for Agent-based SCA scans. Only used if -ps is true - If empty, SCA will not be run alongside the Pipeline Scan.",
+            help="(optional) Name of the workspace to use for Agent-based SCA scans - If empty and using the Pipeline Scanner, SCA results will not be generated.",
             required=False
         )
         parser.add_argument(

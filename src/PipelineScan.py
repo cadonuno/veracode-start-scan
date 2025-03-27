@@ -3,12 +3,12 @@ import threading
 
 from pathlib import Path
 from ScanConfiguration import ScanConfiguration
-from CliCaller import call_subprocess, get_absolute_file_path, save_sbom_file
+from CliCaller import call_subprocess, get_absolute_file_path
 from ScanConfiguration import ScanConfiguration
 from VeracodeCli import get_policy_file_name
-from ErrorHandler import exit_with_error, try_generate_error_message
-from VeracodeApi import expire_srcclr_token, link_sca_project, get_agent_sbom, get_scan_project_guid
-
+from ParallelScanHandler import parse_all_results
+from VeracodeApi import expire_srcclr_token
+from AgentScanner import run_agent_sca
 
 def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, policy_file_name, results_json, results_txt):
     commands = [scan_configuration.veracode_cli_location, "static", "scan", 
@@ -26,19 +26,6 @@ def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, p
         commands.append(scan_configuration.include)
     returned_values[scan_target] = call_subprocess(process_id=f"Scanning {scan_target}", scan_configuration=scan_configuration, fail_on_error=False, commands=commands)
 
-def run_agent_sca_inner(results_file, scan_configuration):
-    commands=["srcclr", "scan", scan_configuration.srcclr_to_scan, "--recursive", "--allow-dirty"]
-    if scan_configuration.verbose:
-        commands.append("--debug")
-    return call_subprocess(process_id="Running SCA Scan", scan_configuration=scan_configuration, fail_on_error=False, 
-                            commands=commands,
-                            additional_env=[{"name": "SRCCLR_API_URL", "value": scan_configuration.srcclr_api_url},
-                                            {"name": "SRCCLR_API_TOKEN", "value": scan_configuration.srcclr_token}],
-                            results_file=results_file,
-                            shell=True,
-                            return_line_filter=["Full Report Details", "https://"])
-
-
 def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_values, threads, base_results_location):
     Path(base_results_location).mkdir(parents=True, exist_ok=True)
     for scan_target in os.listdir(get_absolute_file_path(scan_configuration.base_cli_directory, scan_configuration.source)):
@@ -49,14 +36,6 @@ def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_valu
                                                                          os.path.join(folder_to_save, "results.txt"),))
         thread.start()
         threads.append(thread)
-
-def run_agent_sca(returned_values, results_file, scan_configuration):
-    sca_results = run_agent_sca_inner(results_file, scan_configuration)
-    if scan_configuration.link_project and sca_results[2]:
-        scan_configuration.project_guid = link_sca_project(sca_results[2], scan_configuration)
-    elif sca_results[2]:
-        scan_configuration.project_guid = get_scan_project_guid(sca_results[2], scan_configuration)
-    returned_values["SCA Scan"] = sca_results
 
 def start_pipeline_scan(scan_configuration: ScanConfiguration):
     policy_file_name = get_policy_file_name(scan_configuration)
@@ -75,17 +54,7 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
         for thread in threads:
             thread.join()
     finally:
-        expire_srcclr_token(scan_configuration)
+        if scan_configuration.srcclr_token:
+            expire_srcclr_token(scan_configuration)
 
-    if scan_configuration.sbom_type:
-        save_sbom_file(get_agent_sbom(scan_configuration), scan_configuration)
-
-    total_return_code = 0
-    errors = []
-    for target, returned_value in returned_values.items():
-        total_return_code += abs(returned_value[0])
-        errors=try_generate_error_message(return_code=returned_value[0], error_message=returned_value[1], target=target)
-    if scan_configuration.fail_build and total_return_code != 0:
-        exit_with_error(errors, return_value=total_return_code, scan_configuration=scan_configuration)
-    else:
-        print(errors)
+    parse_all_results(scan_configuration, returned_values)

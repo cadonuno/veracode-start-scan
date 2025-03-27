@@ -3,11 +3,10 @@ import os
 import io
 import json
 
-from colored import Fore, Style
+from ColourHandler import INFO_PREFIX_COLOUR, RESET_STYLE
 from ErrorHandler import exit_with_error
 from ScanConfiguration import ScanConfiguration
 
-PROCESS_ID_COLOUR = Fore.rgb('112', '146', '190')
 
 def handle_error(fail_on_error, error_message, return_code, scan_id, scan_configuration):
     if return_code and return_code != 0 and fail_on_error:
@@ -43,7 +42,7 @@ def handle_output(process_id, process, output_file, return_line_filter):
             last_line = last_line if last_line else all_match(line, return_line_filter)
         else:
             last_line = line.strip() if line.strip() else last_line
-        print(f"{PROCESS_ID_COLOUR}{process_id}:{Style.reset} {line}", end='')
+        print(f"{INFO_PREFIX_COLOUR}{process_id}:{RESET_STYLE} {line}", end='')
         if output_file:
             print(line, file=output_file, end='')
         if line.startswith("Scan ID"):
@@ -61,7 +60,7 @@ def save_sbom_file(sbom_json, scan_configuration):
     sbom_location = os.path.join(get_absolute_file_path(scan_configuration.base_cli_directory, "scan_results"), f"{scan_configuration.application}-SBOM-{scan_configuration.sbom_type}.json")
     with open(sbom_location, 'w') as output_file:
         output_file.write(json.dumps(sbom_json, indent=2))
-    print(f"{PROCESS_ID_COLOUR}Veracode SBOM:{Style.reset} {scan_configuration.sbom_type} SBOM saved to: {sbom_location}")
+    print(f"{INFO_PREFIX_COLOUR}Veracode SBOM:{RESET_STYLE} {scan_configuration.sbom_type} SBOM saved to: {sbom_location}")
 
 def get_absolute_file_path(base_directory, file_name):
     return os.path.join(base_directory, file_name)
