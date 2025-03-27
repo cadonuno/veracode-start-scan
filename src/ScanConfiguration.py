@@ -265,7 +265,7 @@ class ScanConfiguration:
         self.sbom_type = self.sbom_type.replace(" ", "").lower() if self.sbom_type else ""
         errors = self.validate_field(errors, self.sbom_type, "-sbom/--sbom_type", "SBOM Type must be one of these values: cyclonedx, spdx", lambda sbom_type: not sbom_type in SBOM_TYPES)
         if self.sbom_type and not self.scan_timeout and not self.workspace_name:
-            errors = self.append_error(errors, self.sbom_type, "-sbom/--sbom_type", "For fetching an SBOM for a policy or sandbox scan, --scan_timeout needs to be set")
+            errors = self.append_error(errors, self.sbom_type, "-sbom/--sbom_type", "For fetching an SBOM --scan_timeout or --workspace_name needs to be set")
 
         errors = self.validate_field_size(errors, self.version, "-v/--version", "Scan name", 256)
 

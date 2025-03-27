@@ -54,7 +54,7 @@ def start_platform_scan(scan_configuration: ScanConfiguration):
         if scan_configuration.srcclr_token:
             expire_srcclr_token(scan_configuration)
 
-    if scan_configuration.sbom_type:
+    if scan_configuration.sbom_type and not scan_configuration.workspace_name:
         save_sbom_file(get_upload_sbom(scan_configuration), scan_configuration)
 
     parse_all_results(scan_configuration, returned_values)
