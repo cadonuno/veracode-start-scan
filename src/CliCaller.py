@@ -6,6 +6,7 @@ import json
 from ColourHandler import INFO_PREFIX_COLOUR, RESET_STYLE
 from ErrorHandler import exit_with_error
 from ScanConfiguration import ScanConfiguration
+from Constants import FILE_TYPE, FILE_LOCATION
 
 
 def handle_error(fail_on_error, error_message, return_code, scan_id, scan_configuration):
@@ -60,6 +61,8 @@ def save_sbom_file(sbom_json, scan_configuration):
     sbom_location = os.path.join(get_absolute_file_path(scan_configuration.base_cli_directory, "scan_results"), f"{scan_configuration.application}-SBOM-{scan_configuration.sbom_type}.json")
     with open(sbom_location, 'w') as output_file:
         output_file.write(json.dumps(sbom_json, indent=2))
+    scan_configuration.generated_output_files.append({ FILE_TYPE: f"{scan_configuration.sbom_type} SBOM", FILE_LOCATION: sbom_location})
+
     print(f"{INFO_PREFIX_COLOUR}Veracode SBOM:{RESET_STYLE} {scan_configuration.sbom_type} SBOM saved to: {sbom_location}")
 
 def get_absolute_file_path(base_directory, file_name):

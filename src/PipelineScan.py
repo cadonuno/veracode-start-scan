@@ -9,8 +9,9 @@ from VeracodeCli import get_policy_file_name
 from ParallelScanHandler import parse_all_results
 from VeracodeApi import expire_srcclr_token
 from AgentScanner import run_agent_sca
+from Constants import FILE_TYPE, FILE_LOCATION
 
-def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, policy_file_name, results_json, results_txt):
+def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration : ScanConfiguration, policy_file_name, results_json, results_txt):
     commands = [scan_configuration.veracode_cli_location, "static", "scan", 
                                             os.path.join(scan_configuration.source, scan_target), 
                                             "--project-name", scan_configuration.application,
@@ -25,6 +26,8 @@ def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration, p
         commands.append("--include")
         commands.append(scan_configuration.include)
     returned_values[scan_target] = call_subprocess(process_id=f"Scanning {scan_target}", scan_configuration=scan_configuration, fail_on_error=False, commands=commands)
+    scan_configuration.generated_output_files.append({ FILE_TYPE: f"Pipeline scan results JSON for {scan_target}", FILE_LOCATION: results_json})
+    scan_configuration.generated_output_files.append({ FILE_TYPE: f"Pipeline scan results TXT for {scan_target}", FILE_LOCATION: results_txt})
 
 def start_all_pipeline_scans(scan_configuration, policy_file_name, returned_values, threads, base_results_location):
     Path(base_results_location).mkdir(parents=True, exist_ok=True)

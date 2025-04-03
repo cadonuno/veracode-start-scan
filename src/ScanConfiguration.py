@@ -75,6 +75,8 @@ class ScanConfiguration:
     workspace_guid : str = None
     project_guid : str = None
     sbom_type : str = None
+    generated_output_files : list = []
+
     srcclr_token : str = None
     sca_agent_name : str = None
     policy_name : str = None
@@ -180,7 +182,7 @@ class ScanConfiguration:
             if self.exclude:
                 self.append_error(errors, self.wait_for_timeout, "-e/--exclude", "Pipeline scans do not support --exclude")
             if self.scan_all_non_fatal_top_level_modules:
-                self.append_error(errors, self.wait_for_timeout, "-sanftlm/--scan_all_non_fatal_top_level_modules", "Pipeline scans do not support --exscan_all_non_fatal_top_level_modulesclude")
+                self.append_error(errors, self.scan_all_non_fatal_top_level_modules, "-sanftlm/--scan_all_non_fatal_top_level_modules", "Pipeline scans do not support --scan_all_non_fatal_top_level_modulesclude")
         if self.wait_for_timeout:
             if self.pipeline_scan:
                 self.append_error(errors, self.wait_for_timeout, "-wt/--wait_for_timeout", "Pipeline scans do not support (or require) --wait_for_timeout")
@@ -262,8 +264,8 @@ class ScanConfiguration:
             now = datetime.now()
             self.sca_agent_name = f"{now.year}{now.month}{now.day}{now.hour}{now.minute}{now.second}{now.microsecond}"
             self.srcclr_api_url = SCA_URL_MAP[get_region_for_api_credential(self.vid)]
-        self.sbom_type = self.sbom_type.replace(" ", "").lower() if self.sbom_type else ""
-        errors = self.validate_field(errors, self.sbom_type, "-sbom/--sbom_type", "SBOM Type must be one of these values: cyclonedx, spdx", lambda sbom_type: not sbom_type in SBOM_TYPES)
+        self.sbom_type = self.sbom_type.replace(" ", "").upper() if self.sbom_type else ""
+        errors = self.validate_field(errors, self.sbom_type, "-sbom/--sbom_type", "SBOM Type must be one of these values: CYCLONEDX, SPDX", lambda sbom_type: not sbom_type in SBOM_TYPES)
         if self.sbom_type and not self.scan_timeout and not self.workspace_name:
             errors = self.append_error(errors, self.sbom_type, "-sbom/--sbom_type", "For fetching an SBOM --scan_timeout or --workspace_name needs to be set")
 
