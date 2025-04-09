@@ -8,8 +8,10 @@ from PreScan import pre_scan_actions
 from ErrorHandler import exit_with_error, show_warning
 
 def main():
-    old_veracode_api_key_id = os.environ.get('veracode_api_key_id', "")
-    old_veracode_api_key_secret = os.environ.get('veracode_api_key_secret', "")
+    old_lower_veracode_api_key_id = os.environ.get('veracode_api_key_id', "")
+    old_lower_veracode_api_key_secret = os.environ.get('veracode_api_key_secret', "")
+    old_upper_veracode_api_key_id = os.environ.get('VERACODE_API_KEY_ID', "")
+    old_upper_veracode_api_key_secret = os.environ.get('VERACODE_API_KEY_SECRET', "")
     old_http_proxy = os.environ.get('http_proxy', "") 
     old_http_proxy_caps = os.environ.get('HTTP_PROXY', "")
     old_https_proxy = os.environ.get('https_proxy', "")
@@ -33,8 +35,10 @@ def main():
         else:
             start_platform_scan(scan_configuration)
     finally:
-        os.environ['veracode_api_key_id'] = old_veracode_api_key_id
-        os.environ['veracode_api_key_secret'] = old_veracode_api_key_secret
+        os.environ['veracode_api_key_id'] = old_lower_veracode_api_key_id
+        os.environ['VERACODE_API_KEY_ID'] = old_upper_veracode_api_key_id
+        os.environ['veracode_api_key_secret'] = old_lower_veracode_api_key_secret
+        os.environ['VERACODE_API_KEY_SECRET'] = old_upper_veracode_api_key_secret
         os.environ['http_proxy'] = old_http_proxy
         os.environ['HTTP_PROXY'] = old_http_proxy_caps
         os.environ['https_proxy'] = old_https_proxy

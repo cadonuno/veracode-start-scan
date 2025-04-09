@@ -640,7 +640,9 @@ class ScanConfiguration:
         args = parser.parse_args()
 
         os.environ['veracode_api_key_id'] = args.veracode_api_key_id
+        os.environ['VERACODE_API_KEY_ID'] = args.veracode_api_key_id
         os.environ['veracode_api_key_secret'] = args.veracode_api_key_secret
+        os.environ['VERACODE_API_KEY_SECRET'] = args.veracode_api_key_secret
         self.application = args.application
         self.application_guid = args.application_guid
         self.description = args.description
