@@ -28,7 +28,6 @@ def main():
         if not os.path.isdir(scan_configuration.source) or not os.listdir(scan_configuration.source):
             exit_with_error(f"Packaging failed - no files generated at {scan_configuration.source}", -1, scan_configuration)
 
-
         scan_configuration = pre_scan_actions(scan_configuration)
         if scan_configuration.pipeline_scan:
             start_pipeline_scan(scan_configuration)

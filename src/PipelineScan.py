@@ -16,7 +16,7 @@ def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration : 
                                             os.path.join(scan_configuration.source, scan_target), 
                                             "--project-name", scan_configuration.application,
                                             "--app-id", scan_configuration.application_guid,
-                                            "--policy-file", f"{policy_file_name}", 
+                                            "--policy-file", policy_file_name, 
                                             "--results-file", results_json,
                                             "--summary-output", results_txt,
                                             "--project-name", scan_configuration.application]

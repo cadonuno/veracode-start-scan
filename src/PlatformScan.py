@@ -14,7 +14,7 @@ def has_failed_due_to_concurrent_scan(return_message):
 
 def run_scan(scan_configuration : ScanConfiguration, scan_command, timeout, start_time=None):
     scan_type_prefix = f"{'Sandbox' if scan_configuration.sandbox_name else 'Policy'} Scan"
-    returned_value = call_subprocess(f"{scan_type_prefix}", scan_configuration=scan_configuration, fail_on_error=False, commands=scan_command)
+    returned_value = call_subprocess(scan_type_prefix, scan_configuration=scan_configuration, fail_on_error=False, commands=scan_command)
     
     if returned_value[0] and scan_configuration.wait_for_timeout and has_failed_due_to_concurrent_scan(returned_value[1]):
         if not start_time:
@@ -25,7 +25,7 @@ def run_scan(scan_configuration : ScanConfiguration, scan_command, timeout, star
         if timeout > time_since:
             print(f"{scan_type_prefix} already running, retrying in {TIMEOUT_WAIT} seconds.")
             time.sleep(TIMEOUT_WAIT)
-            print(f" - Retrying now.")
+            print(" - Retrying now.")
             return run_scan(scan_configuration, scan_command, timeout, start_time)
         else:
             print(f"ERROR: {scan_type_prefix} still running after {scan_configuration.wait_for_timeout} minutes.")
@@ -100,4 +100,4 @@ def start_platform_scan_inner(scan_configuration: ScanConfiguration, returned_va
         scan_command.append(scan_configuration.include)
 
     scan_result = run_scan(scan_configuration, scan_command, timedelta(minutes=scan_configuration.wait_for_timeout) if scan_configuration.wait_for_timeout else timedelta(minutes=0))
-    returned_values[f"{"Sandbox" if scan_configuration.sandbox_name else "Policy"} Scan"] = scan_result
+    returned_values[f"{'Sandbox' if scan_configuration.sandbox_name else 'Policy'} Scan"] = scan_result
