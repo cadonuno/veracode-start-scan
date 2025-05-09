@@ -13,3 +13,5 @@ SCAN_IN_PROGRESS_ERROR = "* A scan is in progress. Wait for the current scan to 
 
 FILE_TYPE = "file_type"
 FILE_LOCATION = "file_location"
+
+MAX_PIPELINE_SCAN_SIZE_IN_BYTES = 2e+8

@@ -103,6 +103,7 @@ class ScanConfiguration:
     cleanup_before_start : bool = False
     cleanup_before_exit : bool = False
     has_generated_files : bool = False
+    fallback_sandbox : str = None
 
     def hide_value(self, value):
         return "*" * len(value)
@@ -636,6 +637,12 @@ class ScanConfiguration:
             required=False,
             action=argparse.BooleanOptionalAction
         )
+        parser.add_argument(
+            "-fs",
+            "--fallback_sandbox",
+            help="(optional) Sandbox name to fallback to if packaged application is bigger than 200MB (pipeline scan limit).",
+            required=False
+        )
 
         args = parser.parse_args()
 
@@ -693,5 +700,6 @@ class ScanConfiguration:
         self.require_teams = args.require_teams
         self.cleanup_before_start = args.cleanup_before_start
         self.cleanup_before_exit = args.cleanup_before_exit
+        self.fallback_sandbox = args.fallback_sandbox
 
         self.validate_input()

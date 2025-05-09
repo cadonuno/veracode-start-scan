@@ -1,5 +1,6 @@
 import os
 import threading
+import datetime
 
 from pathlib import Path
 from ScanConfiguration import ScanConfiguration
@@ -9,7 +10,9 @@ from VeracodeCli import get_policy_file_name
 from ParallelScanHandler import parse_all_results
 from VeracodeApi import expire_srcclr_token
 from AgentScanner import run_agent_sca
-from Constants import FILE_TYPE, FILE_LOCATION
+from ErrorHandler import exit_with_error
+from Constants import FILE_TYPE, FILE_LOCATION, MAX_PIPELINE_SCAN_SIZE_IN_BYTES
+from ColourHandler import WARNING_COLOUR, RESET_STYLE
 
 def run_pipeline_scan_thread(returned_values, scan_target, scan_configuration : ScanConfiguration, policy_file_name, results_json, results_txt):
     commands = [scan_configuration.veracode_cli_location, "static", "scan", 
@@ -61,3 +64,18 @@ def start_pipeline_scan(scan_configuration: ScanConfiguration):
             expire_srcclr_token(scan_configuration)
 
     parse_all_results(scan_configuration, returned_values)
+
+
+def validate_pipeline_scan_artifacts(scan_configuration: ScanConfiguration):
+    for scan_target in os.listdir(get_absolute_file_path(scan_configuration.base_cli_directory, scan_configuration.source)):
+        if Path(os.path.join(scan_configuration.source, scan_target)).stat().st_size > MAX_PIPELINE_SCAN_SIZE_IN_BYTES:
+            if scan_configuration.fallback_sandbox:
+                scan_configuration.pipeline_scan = False
+                scan_configuration.sandbox_name = scan_configuration.fallback_sandbox
+                scan_configuration.version = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+                scan_configuration.scan_timeout = 60
+                print(f"{WARNING_COLOUR}WARNING{RESET_STYLE}: {scan_target} is larger than the 200MB pipeline scan limit. Falling back to Sandbox '{scan_configuration.fallback_sandbox}'")
+                return
+            else:
+                exit_with_error(f"{scan_target} is larger than the 200MB pipeline scan limit.", -1, scan_configuration)
+                
