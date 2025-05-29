@@ -9,6 +9,33 @@ Allows for simple implementation of a Veracode scanning workflow.
 - The Veracode API wrapper is available in the local system
 - To use Agent-based SCA, it needs to be installed in the local system and available through the `srcclr` command
 
+## Required Veracode Roles and Permissions:
+> ___Note___ - all roles can be replaced by an equivalent Custom Role (if available)
+- Be a member of all teams being used and:
+    - To start the Scan:
+        - Either:
+            - A human account with the `Submitter` role (for running policy scans)
+            - A human account with the `Sandbox User` role (for running sandbox or pipeline scans)
+            - A non-human account with `Upload API - Submit Only` role (for policy, sandbox, or pipeline scans)
+            - A non-human account with `Upload and Scan API` role (for policy, sandbox, or pipeline scans)
+        - Under Allowed Scan Types, have Access to `All Scan Types`, `Static Scan (API)`, or `Static Scan`.
+    - If creating application profiles:
+        - Either:
+            - A human account with the `Creator` role
+            - A non-human account with the `Upload and Scan API` role
+    - If creating teams or business units:
+        - Either:
+            - A human account with the `Administrator` role
+            - A non-human account with the `Admin API` role
+    - If using collections:
+        - Have the collections feature enabled on your account (contact Veracode Support to enable it)
+        - Either:
+            - A human account with the `Collection Manager` role
+            - A non-human account with the `Collection Manager API` role
+    - For running Agent-based SCA scans:
+        - A human account with the `Workspace Administrator` role
+        - A human account with the `Workspace Editor` role
+
 ## Installation
 Clone this repository:
     git clone https://github.com/cadonuno/veracode-start-scan.git
