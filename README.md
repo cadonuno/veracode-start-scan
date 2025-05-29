@@ -27,14 +27,16 @@ Allows for simple implementation of a Veracode scanning workflow.
         - Either:
             - A human account with the `Administrator` role
             - A non-human account with the `Admin API` role
-    - If using collections:
-        - Have the collections feature enabled on your account (contact Veracode Support to enable it)
+    - If running Agent-based SCA scans:
+        - A human account with the `Workspace Administrator` role
+        - A human account with the `Workspace Editor` role
+    - If using Collections:
+        - Have the Collections feature enabled on your account (contact Veracode Support to enable it)
         - Either:
             - A human account with the `Collection Manager` role
             - A non-human account with the `Collection Manager API` role
-    - For running Agent-based SCA scans:
-        - A human account with the `Workspace Administrator` role
-        - A human account with the `Workspace Editor` role
+    - If using Customer Managed Keys (CMKs):
+        - Have the Customer Managed Keys feature enabled on your account (contact Veracode Support to enable it)
 
 ## Installation
 Clone this repository:
