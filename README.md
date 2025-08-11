@@ -51,7 +51,7 @@ Install dependencies:
     python ./src/veracode-start-scan.py (arguments)
 
 ## Example Usage:
-- For a detailed explanation on each parameter, jump to [Full list of supported arguments](##full-list-of-supported-arguments)
+- For a detailed explanation on each parameter, jump to [Full list of supported arguments](#full-list-of-supported-arguments)
 
 ### Package an application, creating or updating the application profile, business unit, teams, and collection, if necessary, and run a Policy/Sandbox and an Agent-based SCA scan, waiting for results and breaking build if it fails policy:
     python ./src/veracode-start-scan.py -vid <veracode_api_id> -vkey <veracode_api_key> -a <application_name> -bc <business_criticality> (-desc <application_description>) (-at <application_tags>) (-t <team1> -t <team2>...) (-bu <business_unit>) (-ac <custom_field_name>:<application_custom_field_value> -ac <custom_field_name>:<application_custom_field_value>...) -c <collection_name> (-cd <collection_description>) (-ct <collection_tags>) (-cc <custom_field_name>:<collection_custom_field_value> -cc <custom_field_name>:<collection_custom_field_value>...) (-bo <business_owner> -boe <business_owner_email>) (-sn <sandbox_name>) -st "folder" -s <path_to_project> -v <scan_name(unique)> -wn <agent_workspace_name> (-sct <scan_timeout>) (-del 1) (-lp) (--sbom <sbom_type>) (-i <modules_to_select>) (-e <modules_not_to_select>) (-sanftlm) (-d) -f
